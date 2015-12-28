@@ -5,6 +5,7 @@ import threading
 import time
 from datetime import datetime
 import serial
+import sys
 
 class DummyController:
     def __init__(self, uid="dummy"):
@@ -57,21 +58,24 @@ class Node:
                 self.errors.append(e)
     def ping(self, d):
         try:
+            r = None
             addr = self.config['SERVER_ADDR']
-            r = requests.post(addr, data=d)
+            r = requests.post(addr, json=d)
             return None
         except Exception as e:
             print 'An Exception occured in ping(): %s' % str(e)
-            return (r.status_code, r.reason)
+            if r is not None:
+                return (r.status_code, r.reason)
+            else:
+                return (400)
     def run(self):
         try:
             while (len(self.errors) == 0) and self.threads_active:
                 time.sleep(0.01)
                 n = len(self.queue)
-                print 'Queue Length: %d' % n
                 if n != 0:
                     d = self.queue.pop()
-                    print d
+                    print n, d
                     e = self.ping(d)
                     if e is not None:
                         self.errors.append(e)
@@ -79,11 +83,15 @@ class Node:
                 print self.errors
         except KeyboardInterrupt:
             print "\nexiting..."
-            self.threads_active = False
-            exit(0)
+        self.threads_active = False
+        exit(0)
     
 if __name__ == '__main__':
-    with open('default.cfg') as jsonfile:
+    if len(sys.argv) > 1:
+        configfile = sys.argv[1]
+    else:
+        configfile = 'default.cfg'
+    with open(configfile) as jsonfile:
         config = json.loads(jsonfile.read())
     node = Node(config=config)
     node.run()
