@@ -2,5 +2,5 @@
 apt-get install git python-pip  --fix-missing apache2 libapache2-mod-wsgi -qq
 apt-get install python-dev --qq
 a2enmod wsgi
-pip install flask
+pip install flask virtualenv
 cp urban-barns.conf /etc/apache2/sites-available/
