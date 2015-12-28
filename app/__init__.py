@@ -14,7 +14,7 @@ def index():
 
 @app.route('/node/<node_id>')
 def show_node_summary(node_id):
-    return return render_template('node.html', node_id=node_id)
+    return render_template('node.html', node_id=node_id)
 
 if __name__ == '__main__':
     app.run()
