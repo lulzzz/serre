@@ -1,10 +1,10 @@
 #!/bin/sh
-apt-get install git python-pip apache2 libapache2-mod-wsgi -qq --fix-missing 
-apt-get install python-dev --qq
+apt-get update
+apt-get install mongodb git python-pip apache2 libapache2-mod-wsgi build-essential python-dev -qq -y --fix-missing 
 a2enmod wsgi
-pip install flask virtualenv
+pip install flask virtualenv pymongo
 cp ../app/urban-barns.conf /etc/apache2/sites-available/
 a2ensite urban-barns.conf
 a2dissite 000-default.conf
-service apache restart
 echo "45.55.83.125" >> /etc/hosts
+service apache restart
