@@ -4,3 +4,4 @@ apt-get install python-dev --qq
 a2enmod wsgi
 pip install flask virtualenv
 cp ../app/urban-barns.conf /etc/apache2/sites-available/
+a2ensite urban-barns.conf
