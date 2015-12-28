@@ -5,18 +5,39 @@ import threading
 import time
 from datetime import datetime
 import serial
-    
+
+class DummyController:
+    def __init__(self, uid="dummy"):
+        self.uid = uid
+    def parse(self):
+        s = "{\"uid\":\"%s\",\"chksum\":0}" % (self.uid)
+        d = json.loads(s)
+        return d
+    def checksum(self):
+        return True
+        
+class Controller:
+    def __init__(self, device='/dev/ttyACM0', baud=9600):
+        self.port = serial.Serial(device, baud)
+    def parse(self):
+        if self.port.inWaiting() > 0:
+            s = self.port.read()
+        d = json.loads(s)
+        return s
+            
 class Node:
-    def __init__(self, config=None, device='/dev/ttyACM0', baud=9600):
+    def __init__(self, config=None):
         self.config = config
         self.threads_active = True
         if self.config['CTRL_ON']:
-            self.port = serial.Serial(device, baud)
-            threading.Thread(target=self.watchdog, args=(), kwargs={}).start()
+            self.controller = serial.Serial(device, baud)
+        else:
+            self.controller = DummyController()
+        threading.Thread(target=self.watchdog, args=(), kwargs={}).start()
+            
     def watchdog(self):
         while self.threads_active == True:
-            if self.port.inWaiting() > 0:
-                self.port.read()
+            s = self.controller.parse()
     def ping(self, data):
         try:
             addr = self.config['SERVER_ADDR']
