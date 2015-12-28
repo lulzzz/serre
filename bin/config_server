@@ -1,3 +1,5 @@
 #!/bin/sh
-apt-get install git python-pip --fix-missing apache2 libapache2-mod-wsgi -qq
+apt-get install git python-pip  --fix-missing apache2 libapache2-mod-wsgi -qq
+apt-get install python-dev --qq
+a2enmod wsgi
 pip install flask
