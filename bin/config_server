@@ -5,3 +5,6 @@ a2enmod wsgi
 pip install flask virtualenv
 cp ../app/urban-barns.conf /etc/apache2/sites-available/
 a2ensite urban-barns.conf
+a2dissite 000-default.conf
+service apache restart
+echo "45.55.83.125" >> /etc/hosts
