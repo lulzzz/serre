@@ -81,7 +81,11 @@ class Controller:
         return chksum % mod
     def reset(self):
         pass
-            
+
+"""
+Node Class
+This class is responsible for acting as the HTTP interface between the server and controller(s)
+"""
 class Node:
     def __init__(self, config=None):
         self.config = config
@@ -90,16 +94,15 @@ class Node:
         if self.config['CTRL_ON']:
             self.controller = Controller(self.config['CTRL_DEVICE'], self.config['CTRL_BAUD'])
         else:
-            self.controller = DummyController()
-        self.queue = []
+            self.controller = DummyController() # use dummy if controller is disabled (i.e. for debugging)
+        self.queue = [] # the outgoing queue
         threading.Thread(target=self.watchdog, args=(), kwargs={}).start()
     def watchdog(self):
         while self.threads_active == True:
             try:
                 d = self.controller.parse()
-                print 'parse ok'
-                d['time'] = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")
-                self.queue.append(d)
+                d['time'] = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S") # grab the current time-stamp for the sample
+                self.queue.append(d) # add the sample to the outgoing queue
             except Exception as e:
                 print str(e)
                 self.threads_active == False
@@ -109,30 +112,33 @@ class Node:
             r = None
             addr = self.config['SERVER_ADDR']
             r = requests.post(addr, json=d)
-            return (r.status_code, r.reason)
+            return (r.status_code, r.json())
         except Exception as e:
             # print str(e)
             if r is not None:
                 return (r.status_code, r.reason)
             else:
                 return (400, 'Lost server')
-    def run(self, queue_limit=16, error_limit=8):
+    def run(self, queue_limit=16, error_limit=None):
         try:
-            while (len(self.errors) < error_limit) and self.threads_active:
+            while ((len(self.errors) < error_limit) or (error_limit is None)) and self.threads_active:
+
+                # Handle out-queue
                 n = len(self.queue)
                 if n > 0:
                     try:
                         d = self.queue.pop()
                         while len(self.queue) > queue_limit:
                             self.queue.pop(0) # grab from out-queue
-                        ce = self.ping(d)
+                        ce = self.ping(d) # push sample to server, possibly getting task from pull
                         if ce is not None:
                             self.errors.append(ce)
                     except Exception as e:
                         print str(e)
                 else:
                     d = {}
-                # Handle accrued errors
+                    
+                # Handle accrued responses/errors
                 m = len(self.errors)
                 if m > 0:
                     for e in self.errors:
@@ -149,10 +155,7 @@ class Node:
                             pass #self.errors.pop() #!TODO Unknown errors 
                 # Summary
                 if d != {}:
-                    s = "\rQueue: %d, Error: %s, Last: %s" % (n, str(ce), str(d))
-                    sys.stdout.write(s)
-                    sys.stdout.flush()
-                # print "Queue: %d\tErrors: %d" % (n, m)
+                    print "Queue: %d, Response: %s, Data: %s" % (n, str(ce), str(d['data']))
             else:
                 print self.errors
         except KeyboardInterrupt:

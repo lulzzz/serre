@@ -18,10 +18,12 @@ def index():
         q = queue.find_one({'uid' : uid})
         if q is not None:
             queue.remove({'_id' : q['_id']}) # remove action from queue
+            task = q['task']
+        else:
+            task = None
         response = {
-            "_id" : str(_id),
             "status" : "ok",
-            "action" : q # send action to node
+            "task" : task #!TODO: send task to node
         }
         return jsonify(response)
     elif request.method == 'GET':

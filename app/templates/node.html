@@ -3,15 +3,26 @@
 <html>
 <title>Urban Barns - {{ node_id }}</title>
 <head>
-<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
-<script type="text/javascript">
+<script type="text/javascript"
+	src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+<script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
+<script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
 
-JSONTest = function() {
+<script type="text/javascript">
+JSONPush = function() {
     var resultDiv = $("#resultDivContainer");
+    var lights_val = $("#lights").slider("option", "value");
+    var potassium_val = $("#potassium").slider("option", "value");
     $.ajax({
         url: "/api/update_queue",
         type: "POST",
-        data: { uid: "{{node_id}}", task: "test"},
+        data: {
+            uid: "{{node_id}}",
+            task: "test",
+            lights: lights_val
+        },
         dataType: "json",
         success: function (result) {
             switch (result) {
@@ -39,10 +50,22 @@ JSONTest = function() {
   {% endif %}
 
 <div id="resultDivContainer"></div>
+<div data-role="page">
+  <div data-role="header">
+    <h1>Control Panel - {{node_id}} </h1>
+  </div>
 
-<button type="button" onclick="JSONTest()">Test</button>
-
+  <div data-role="main" class="ui-content">
+    <form method="post" action="javascript:JSONPush()">
+      <label for="potassium">Potassium (ppm): </label>
+      <input type="range" name="potassium" id="potassium" value="50" min="0"
+	     max="100">
+      <label for="lights">Lights (%): </label>
+      <input type="range" name="lights" id="lights" value="50" min="0"
+	     max="100">
+      <input type="submit" data-inline="true" value="Submit">
+    </form>
+  </div>
+</div>
 </body>
-</html> 
-
-
+</html>
