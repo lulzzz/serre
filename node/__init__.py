@@ -97,6 +97,7 @@ class Node:
         while self.threads_active == True:
             try:
                 d = self.controller.parse()
+                print 'parse ok'
                 d['time'] = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")
                 self.queue.append(d)
             except Exception as e:
@@ -121,9 +122,9 @@ class Node:
                 n = len(self.queue)
                 if n > 0:
                     try:
+                        d = self.queue.pop()
                         while len(self.queue) > queue_limit:
                             self.queue.pop(0) # grab from out-queue
-                        d = self.queue.pop()
                         ce = self.ping(d)
                         if ce is not None:
                             self.errors.append(ce)

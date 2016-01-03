@@ -17,13 +17,11 @@ def index():
         uid = data['uid']
         q = queue.find_one({'uid' : uid})
         if q is not None:
-            print 'pushing action to node, removing action from queue'
-            queue.delete(q['_id'])
-        # queue.delete_many()
+            queue.remove({'_id' : q['_id']}) # remove action from queue
         response = {
             "_id" : str(_id),
             "status" : "ok",
-            "action" : q
+            "action" : q # send action to node
         }
         return jsonify(response)
     elif request.method == 'GET':
@@ -43,11 +41,10 @@ def update_queue():
     if request.method == "POST":
         data = request.form.to_dict()
         if data is not None:
-            print data
+            _id = queue.insert(data)
             status = "ok"
         else:
             status = "bad"
-        # _id = queue.insert(data)
     else:
         status = "awful"
     response = {
