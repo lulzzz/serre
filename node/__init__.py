@@ -28,7 +28,7 @@ class DummyController:
             return input.encode('utf-8')
         else:
             return input
-    def parse(self, interval=0.1, rand=False):
+    def parse(self, interval=1.0, rand=False):
         time.sleep(interval)
         if rand:
             r = self.random(len(self.data))
@@ -119,10 +119,11 @@ class Node:
         try:
             while (len(self.errors) < error_limit) and self.threads_active:
                 n = len(self.queue)
-                if n != 0:
+                if n > 0:
                     try:
                         while len(self.queue) > queue_limit:
-                            d = self.queue.pop(0) # grab from out-queue
+                            self.queue.pop(0) # grab from out-queue
+                        d = self.queue.pop()
                         ce = self.ping(d)
                         if ce is not None:
                             self.errors.append(ce)
@@ -134,7 +135,6 @@ class Node:
                 m = len(self.errors)
                 if m > 0:
                     for e in self.errors:
-                        # print e, len(self.errors)
                         # ERROR CODES
                         if e[0] == 200:
                             self.errors.pop()
