@@ -19,6 +19,7 @@ def index():
         if q is not None:
             queue.remove({'_id' : q['_id']}) # remove action from queue
             task = q['task']
+            print q
         else:
             task = None
         response = {
