@@ -2,6 +2,7 @@ from flask import Flask, request, render_template, jsonify
 import json
 from pymongo import MongoClient
 from datetime import datetime, timedelta
+import os, sys
 
 app = Flask(__name__)
 client = MongoClient()
@@ -32,9 +33,22 @@ def index():
     else:
         return None
 
+@app.route('/node/')
+def show_nodes():
+    return render_template('index.html')   
+
 @app.route('/node/<node_id>')
 def show_node_summary(node_id):
-    return render_template('node.html', node_id=node_id)
+    dt = timedelta(hours=1)
+    time_a = datetime.now()
+    time_b = datetime.now() - dt
+    doc_template = {
+        "uid" : node_id,
+        "time" : {"$lt": time_b, "$gt": time_a} #!TODO search by time frame
+    }
+    docs = posts.find(doc_template)
+    snapshot = [d for d in docs]
+    return render_template('node.html', node_id=node_id, snapshot=snapshot)
 
 """
 API Functions
