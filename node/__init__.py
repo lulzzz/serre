@@ -75,6 +75,14 @@ class Controller:
         except Exception as e:
             print str(e)
             return None
+    def set(self, d):
+        del d['lights_off']
+        del d['lights_on']
+        d['lights'] = 1
+        s = json.dumps(d)
+        s.replace(' ', '')
+        print s
+        self.port.write(s)
     def random(self, n):
         r = [random.randint(0,i) for i in range(n)]
         return r
@@ -94,12 +102,14 @@ Tkinter GUI Class (local usage only)
 """
 class GUI(threading.Thread):
     def __init__(self, settings='settings.json'):
+        self.active_changes = False
         settings_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), settings)
         if os.path.exists(settings_path):
             with open(settings_path, 'r') as jsonfile:
                 self.settings = json.loads(jsonfile.read())  
         else:
             self.settings =  {} # by default is empty until set
+        self.active_changes = True
         threading.Thread.__init__(self)
     def run(self):
         self.root = tk.Tk()
@@ -109,8 +119,8 @@ class GUI(threading.Thread):
         [self.root.columnconfigure(i,weight=1) for i in range(3)]
         
         # Lights
-        self.lights_on = tk.DoubleVar()
-        self.lights_off = tk.DoubleVar()
+        self.lights_on = tk.IntVar()
+        self.lights_off = tk.IntVar()
         scale_lights_on = tk.Scale(self.root, from_=0.0, to=24.0, length=200, orient=tk.HORIZONTAL, variable = self.lights_on)
         scale_lights_on.grid(column=0, row=2, ipady=20)
         scale_lights_on.set(self.settings['lights_on'])
@@ -119,22 +129,22 @@ class GUI(threading.Thread):
         scale_lights_off.set(self.settings['lights_off'])
         
         # Watering
-        self.watering_time = tk.DoubleVar()
+        self.watering_time = tk.IntVar()
         self.scale_watering_time = tk.Scale(self.root, from_=0.0, to=60.0, length=200, orient=tk.HORIZONTAL, variable = self.watering_time)
         self.scale_watering_time.grid(column=1, row=2, ipady=20)
         self.scale_watering_time.set(self.settings['watering_time'])
 
         # Cycle Time
-        self.cycle_time = tk.DoubleVar()
-        self.scale_cycle_time = tk.Scale(self.root, from_=0.0, to=60.0, length=200, orient=tk.HORIZONTAL, variable = self.cycle_time)
+        self.cycle_time = tk.IntVar()
+        self.scale_cycle_time = tk.Scale(self.root, from_=0.0, to=360.0, length=200, orient=tk.HORIZONTAL, variable = self.cycle_time)
         self.scale_cycle_time.grid(column=2, row=2, ipady=20)
         self.scale_cycle_time.set(self.settings['cycle_time'])
 
         # Set Button
-        self.buttonA = tk.Button(self.root, text="Set Configuration", command=self.set_config)
-        self.buttonA.grid(column=1, row=4)
+        self.button_set = tk.Button(self.root, text="Set Configuration", command=self.set_config)
+        self.button_set.grid(column=1, row=4)
         self.root.mainloop()
-    def set_config(self):
+    def set_config(self, settings='settings.json'): # called from button_set object
         """
         Updates the dictionary object for settings provided by the GUI
         """        
@@ -142,10 +152,16 @@ class GUI(threading.Thread):
         self.settings['lights_off'] = self.lights_off.get()
         self.settings['watering_time'] = self.watering_time.get()
         self.settings['cycle_time'] = self.cycle_time.get()
+        settings_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), settings)
+        if os.path.exists(settings_path):
+            with open(settings_path, 'w') as jsonfile:
+                jsonfile.write(json.dumps(self.settings, indent=4))
+        self.active_changes = True # (flag) changes are active!
     def get_config(self):
         """
         Returns the dictionary object for settings provided by the GUI
         """
+        self.active_changes = False # (flag) Once changes are retrieved, we assume that they will be sent to the controller
         return self.settings
     def update_config(self, settings):
         """
@@ -207,12 +223,21 @@ class Node:
         * If the App has a task waiting, the task is returned as the response to the POST
         """
         if gui:
+            self.gui_exists = True
             self.gui = GUI()
             self.gui.start()
+        else:
+            self.gui_exists = False
         try:
             while ((len(self.errors) < error_limit) or (error_limit is None)) and self.threads_active:
-                time.sleep(1 / float(freq))
-                # Handle out-queue
+                time.sleep(1 / float(freq)) # slow down everyone, we're moving too fast
+                
+                # Handle GUI
+                if self.gui_exists and self.gui.active_changes:
+                    d = self.gui.get_config()
+                    self.controller.set(d) #!TODO Clean up tp handle diff ctrl vers
+                    
+                # Handle Queue
                 n = len(self.queue)
                 if n > 0:
                     try:
@@ -233,7 +258,7 @@ class Node:
                     for e in self.errors:
                         # ERROR CODES
                         if e[0] == 200:
-                            self.errors.pop()
+                            self.errors.pop() #!TODO Recevied response! possibly set new config values for controller!
                         if e[0] == 400:
                             self.errors.pop() #!TODO bad connection!
                         if e[0] == 500:
@@ -241,7 +266,7 @@ class Node:
                         if e[0] is None:
                             self.errors.pop()
                         else:
-                            pass #self.errors.pop() #!TODO Unknown errors 
+                            pass #!TODO Unknown errors!
                 # Summary
                 if d != {}:
                     print "Queue: %d, Response: %s, Data: %s" % (n, str(ce), str(d['data']))
