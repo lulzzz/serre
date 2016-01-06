@@ -22,21 +22,35 @@ reset()
 """
 class Controller:
     def __init__(self, device="/dev/ttyACM0", baud=9600, config='v1', dummy=False):
-        if type(config) == dict:
-            self.conf = config
-        else:
-            cd = os.getcwd()
-            configpath = os.path.join(cd, 'sketches', config, config + '.ctrl')
-            with open(configpath) as jsonfile:
-                self.conf = self.byteify(json.loads(jsonfile.read()))
-        # .ctrl config needs these
-        self.check = self.conf['checksum']
-        self.data = self.conf['data']
+        try:
+            if type(config) == dict:
+                self.conf = config
+            else:
+                cd = os.getcwd()
+                configpath = os.path.join(cd, 'sketches', config, config + '.ctrl')
+                with open(configpath) as jsonfile:
+                    self.conf = self.byteify(json.loads(jsonfile.read()))
+            # .ctrl config needs these
+            self.check = self.conf['checksum']
+            self.data = self.conf['data']
+        except Exception as e:
+            raise e
         self.dummy = dummy
         if self.dummy:
             self.port = None
         else:
-            self.port = serial.Serial(device, baud)
+            try:
+                if self.conf['device']:
+                    self.device = self.conf['device']
+                else:
+                    self.device = device
+                if self.conf['baud']:
+                    self.baud = self.conf['baud']
+                else:
+                    self.baud = device
+                self.port = serial.Serial(self.device, self.baud)
+            except Exception as e:
+                raise e
     def byteify(self, input):
         if isinstance(input, dict):
             return {self.byteify(key) : self.byteify(value) for key,value in input.iteritems()}
@@ -75,13 +89,22 @@ class Controller:
     def reset(self):
         pass
 
+"""
+Tkinter GUI Class (local usage only)
+"""
 class GUI(threading.Thread):
-    def __init__(self):
+    def __init__(self, settings='settings.json'):
+        settings_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), settings)
+        if os.path.exists(settings_path):
+            with open(settings_path, 'r') as jsonfile:
+                self.settings = json.loads(jsonfile.read())  
+        else:
+            self.settings =  {} # by default is empty until set
         threading.Thread.__init__(self)
     def run(self):
         self.root = tk.Tk()
         self.root.title("Hydroponics Controller")
-        self.root.geometry("1200x600")
+        self.root.geometry("640x480")
         [self.root.rowconfigure(i,weight=1) for i in range(12)]
         [self.root.columnconfigure(i,weight=1) for i in range(3)]
         
@@ -90,32 +113,52 @@ class GUI(threading.Thread):
         self.lights_off = tk.DoubleVar()
         scale_lights_on = tk.Scale(self.root, from_=0.0, to=24.0, length=200, orient=tk.HORIZONTAL, variable = self.lights_on)
         scale_lights_on.grid(column=0, row=2, ipady=20)
-        scale_lights_on.set(6)
+        scale_lights_on.set(self.settings['lights_on'])
         scale_lights_off = tk.Scale(self.root, from_=0.0, to=24.0, length=200, orient=tk.HORIZONTAL, variable = self.lights_off)
         scale_lights_off.grid(column=0, row=3, ipady=20)
-        scale_lights_off.set(18)
+        scale_lights_off.set(self.settings['lights_off'])
         
         # Watering
         self.watering_time = tk.DoubleVar()
-        scale_watering_time = tk.Scale(self.root, from_=0.0, to=60.0, length=200, orient=tk.HORIZONTAL, variable = self.watering_time)
-        scale_watering_time.grid(column=1, row=2, ipady=20)
-        scale_watering_time.set(18)
+        self.scale_watering_time = tk.Scale(self.root, from_=0.0, to=60.0, length=200, orient=tk.HORIZONTAL, variable = self.watering_time)
+        self.scale_watering_time.grid(column=1, row=2, ipady=20)
+        self.scale_watering_time.set(self.settings['watering_time'])
 
         # Cycle Time
         self.cycle_time = tk.DoubleVar()
-        scale_cycle_time = tk.Scale(self.root, from_=0.0, to=60.0, length=200, orient=tk.HORIZONTAL, variable = self.cycle_time)
-        scale_cycle_time.grid(column=2, row=2, ipady=20)
-        scale_cycle_time.set(18)
+        self.scale_cycle_time = tk.Scale(self.root, from_=0.0, to=60.0, length=200, orient=tk.HORIZONTAL, variable = self.cycle_time)
+        self.scale_cycle_time.grid(column=2, row=2, ipady=20)
+        self.scale_cycle_time.set(self.settings['cycle_time'])
 
         # Set Button
-        buttonA = tk.Button(self.root, text="Set Configuration", command=self.set_config)
-        buttonA.grid(column=1, row=4)
+        self.buttonA = tk.Button(self.root, text="Set Configuration", command=self.set_config)
+        self.buttonA.grid(column=1, row=4)
         self.root.mainloop()
     def set_config(self):
-        print self.lights_on.get() # DO SOMETHING
-        print self.lights_off.get() # DO SOMETHING
-        print self.watering_time.get() # DO SOMETHING
-         
+        """
+        Updates the dictionary object for settings provided by the GUI
+        """        
+        self.settings['lights_on'] = self.lights_on.get()
+        self.settings['lights_off'] = self.lights_off.get()
+        self.settings['watering_time'] = self.watering_time.get()
+        self.settings['cycle_time'] = self.cycle_time.get()
+    def get_config(self):
+        """
+        Returns the dictionary object for settings provided by the GUI
+        """
+        return self.settings
+    def update_config(self, settings):
+        """
+        Overrides the dictionary object for settings provided by the GUI
+        """
+        self.settings = settings
+        self.scale_watering_time.set(settings['cycle_time'])
+        self.scale_cycle_time.set(settings['cycle_time'])
+        self.scale_lights_off.set(settings['lights_off'])
+        self.scale_lights_on.set(settings['lights_on'])
+    def close(self):
+        self.root.destroy()
+        
 """
 Node Class
 This class is responsible for acting as the HTTP interface between the server and controller(s)
@@ -154,7 +197,7 @@ class Node:
                 return (r.status_code, r.reason)
             else:
                 return (400, 'Lost server')
-    def run(self, queue_limit=16, error_limit=None, gui=False):
+    def run(self, queue_limit=16, error_limit=None, gui=False, freq=10):
         """
         Run node as HTTP daemon
         Notes:
@@ -164,9 +207,11 @@ class Node:
         * If the App has a task waiting, the task is returned as the response to the POST
         """
         if gui:
-            self.gui = GUI().start()
+            self.gui = GUI()
+            self.gui.start()
         try:
             while ((len(self.errors) < error_limit) or (error_limit is None)) and self.threads_active:
+                time.sleep(1 / float(freq))
                 # Handle out-queue
                 n = len(self.queue)
                 if n > 0:

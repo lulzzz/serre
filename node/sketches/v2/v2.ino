@@ -5,6 +5,10 @@
 // Contants
 const int BAUD = 9600;
 const int INTERVAL = 1000;
+const int N_PIN = A0;
+const int Ca_PIN = A1;
+const int K_PIN = A2;
+const int P_PIN = A3;
 const int OUTPUT_LENGTH = 256;
 const int DATA_LENGTH = 128;
 
@@ -18,13 +22,30 @@ void setup(void) {
 
 void loop(void) {
   delay(INTERVAL);
-  int lights = 1;
-  int watering_time = 60;
-  int cycle_time = 240;
-  sprintf(data_buffer, "{\"lights\":%d,\"watering_time\":%d,\"cycle_time\":%d}", lights, watering_time, cycle_time);
+  int N = get_N();
+  int Ca = get_Ca();
+  int P = get_P();
+  int K = get_K();
+  sprintf(data_buffer, "{\"lightt\":%d,\"K\":%d,\"Ca\":%d,\"N\":%d}", P, K, Ca, N);
   int chksum = checksum(data_buffer);
   sprintf(output_buffer, "{\"data\":%s,\"chksum\":%d}", data_buffer,chksum);
   Serial.println(output_buffer);
+}
+
+int get_N(void) {
+  return analogRead(N_PIN);
+}
+
+int get_Ca(void) {
+  return analogRead(Ca_PIN);
+}
+
+int get_K(void) {
+  return analogRead(K_PIN);
+}
+
+int get_P(void) {
+  return analogRead(P_PIN);
 }
 
 int checksum(char* buf) {

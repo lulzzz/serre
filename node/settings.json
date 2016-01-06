@@ -1,0 +1,6 @@
+{
+    "lights_off" : 18,
+    "lights_on" : 6,
+    "watering_time" : 60,
+    "cycle_time" : 240
+}

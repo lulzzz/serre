@@ -3,9 +3,9 @@
  "device" : "/dev/ttyACM0",
  "checksum" : true,
  "data" : {
- 	"P" : 1024,
-	"N" : 1024,
-	"Ca" : 1024,
-	"K" : 1024
+ 	"lights_on" : 1024,
+	"lights_off" : 1024,
+	"watering_time": 60,
+	"cycle_time" : 240
  }
 }
