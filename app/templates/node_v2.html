@@ -16,18 +16,15 @@
 JSONPush = function() {
     var resultDiv = $("#resultDivContainer");
     var lights_val = lights.valueAsNumber;
-    var watering_time_val = watering_time.valueAsNumber;
-    var cycle_time_val = cycle_time.valueAsNumber;
+    var potassium_val = potassium.valueAsNumber;
     $.ajax({
         url: "/api/update_queue",
         type: "POST",
         data: {
             uid: "{{node_id}}",
-            task: {
-                lights: lights_val,
-                watering_time: watering_time_val,
-                cycle_time: cycle_time_val
-            }
+            task: "levels",
+            L: lights_val,
+            K: potassium_val
         },
         dataType: "json",
         success: function (result) {
@@ -57,14 +54,12 @@ JSONPush = function() {
 
   <div data-role="main" class="ui-content">
     <form method="post" action="javascript:JSONPush()">
-      <label for="watering_time">Watering Time (s): </label>
-      <input type="range" name="watering_time" id="watering_time" value="50" min="0" max="60">
-      <label for="cycle_time">Cycle Time (s): </label>
-      <input type="range" name="cycle_time" id="cycle_time" value="50" min="0" max="60">
+      <label for="potassium">Potassium (ppm): </label>
+      <input type="range" name="potassium" id="potassium" value="50" min="0" max="100">
       <label for="lights">Lights (%): </label>
       <input type="range" name="lights" id="lights" value="50" min="0" max="100">
       <input type="submit" data-inline="true" value="Submit">
-    </form>
+      </form>
     <form method="post" action="demoform.asp">
       <label for="switch">Lights Override</label>
       <input type="checkbox" data-role="flipswitch" name="switch" id="switch">

@@ -244,7 +244,7 @@ class Node:
                         d = self.queue.pop()
                         while len(self.queue) > queue_limit:
                             self.queue.pop(0) # grab from out-queue
-                        ce = self.ping(d) # push sample to server, possibly getting task from pull
+                        ce = self.ping(d) # #!TODO: push sample to server, possibly getting task from pull
                         if ce is not None:
                             self.errors.append(ce)
                     except Exception as e:

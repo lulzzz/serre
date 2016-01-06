@@ -43,6 +43,9 @@ void loop(void) {
     cycle_time = root["cycle_time"];
     watering_time = root["watering_time"];
     lights = root["lights"];
+    while (Serial.available() > 0) {
+      Serial.read();
+    }
   }
   sprintf(data_buffer, "{\"lights\":%d,\"watering_time\":%d,\"cycle_time\":%d}", lights, watering_time, cycle_time);
   int chksum = checksum(data_buffer);

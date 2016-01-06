@@ -16,11 +16,10 @@ def index():
         data = request.json
         _id = posts.insert(request.json)
         uid = data['uid']
-        q = queue.find_one({'uid' : uid})
-        if q is not None:
-            queue.remove({'_id' : q['_id']}) # remove action from queue
-            task = q['task']
-            print q
+        doc = queue.find_one({'uid' : uid})
+        if doc is not None:
+            queue.remove({'_id' : doc['_id']}) # remove action from queue
+            task = doc['task']
         else:
             task = None
         response = {
