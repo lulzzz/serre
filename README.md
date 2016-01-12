@@ -1,4 +1,4 @@
-# Urban Barns
+# Rhum - Recirculating Hydroponic Universal Manager
 
 ## Todo 
 * User-login

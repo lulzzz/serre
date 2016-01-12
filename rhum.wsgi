@@ -2,7 +2,7 @@
 import sys
 import logging
 logging.basicConfig(stream=sys.stderr)
-sys.path.insert(0,"/var/www/urban-barns/")
+sys.path.insert(0,"/var/www/rhum/")
 
 from app import app as application
 application.secret_key = 'Add your secret key'  
