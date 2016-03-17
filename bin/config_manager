@@ -10,4 +10,4 @@ a2dissite 000-default.conf
 # Update Kernel
 read -p "Enter host IP address: ? " ans
 echo $ans >> /etc/hosts
-service apache restart
+service apache2 restart
