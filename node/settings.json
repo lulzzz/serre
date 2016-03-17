@@ -1,8 +1,8 @@
 {
-    "lights_off": 24, 
+    "lights_off": 21, 
     "lights_on": 14, 
-    "watering_time": 27, 
-    "lights": 1, 
-    "time": 21.928971930833335, 
-    "cycle_time": 109
+    "watering_time": 34, 
+    "lights": "0", 
+    "time": 23.160361348333332, 
+    "cycle_time": 146
 }

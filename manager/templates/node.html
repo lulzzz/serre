@@ -14,18 +14,16 @@
 
 <script type="text/javascript">
 JSONPush = function() {
-    var resultDiv = $("#resultDivContainer");
-    var lights_val = lights.valueAsNumber;
-    var watering_time_val = watering_time.valueAsNumber;
-    var cycle_time_val = cycle_time.valueAsNumber;
     $.ajax({
         url: "/api/update_queue",
         type: "POST",
         data: {
             uid: "{{node_id}}",
-            lights: lights_val,
-            watering_time: watering_time_val,
-            cycle_time: cycle_time_val
+            lights: lights.valueAsNumber,
+            lights_on: lights_on.valueAsNumber,
+            lights_off: lights_off.valueAsNumber,
+            watering_time: watering_time.valueAsNumber,
+            cycle_time: cycle_time.valueAsNumber
         },
         dataType: "text/json",
         success: function (result) {
@@ -47,6 +45,7 @@ JSONPush = function() {
 Refresh = function() {
     location.reload();
 };
+
 </script>
 </head>
 <body>
@@ -64,6 +63,10 @@ Refresh = function() {
       <input type="range" name="cycle_time" id="cycle_time" value="{{cycle_time}}" min="0" max="300">
       <label for="lights">Lights (%): </label>
       <input type="range" name="lights" id="lights" value="{{lights}}" min="0" max="100">
+      <label for="lights_on">Lights On (Hours): </label>
+      <input type="range" name="lights_on" id="lights_on" value="{{lights_on}}" min="0" max="24">
+      <label for="lights_off">Lights Off (Hours): </label>
+      <input type="range" name="lights_off" id="lights_off" value="{{lights_off}}" min="0" max="24">
       <input type="submit" data-inline="true" value="Submit">
     </form>
     <form method="post" action="javascript:Refresh()">

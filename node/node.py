@@ -67,11 +67,12 @@ class Controller:
         except Exception as e:
             print str(e)
             return None
-    def set_params(self, d):
+    def set_params(self, params):
         """ Set the target values of the controller """
         now = datetime.now()
         hours_since_midnight = (now - now.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds() / 3600.0
-        d['time'] = hours_since_midnight
+        params['time'] = hours_since_midnight
+        d = {k.encode('ascii'): v for (k, v) in params.items()}
         targets = dict()
         for k,r in self.rules['data'].iteritems():
             try:
@@ -91,8 +92,9 @@ class Controller:
             s = json.dumps(targets)
             s.replace(' ', '')
             self.port.write(s)
+            print "OK: Wrote to controller!"
         else:
-            print "Missing parameters when sending to controller!"
+            print "WARN: Missing parameters when sending to controller!"
     def random(self, n):
         r = [random.randint(0,i) for i in range(n)]
         return r
@@ -260,10 +262,12 @@ class Node:
                 if n > 0:
                     try:
                         data = self.controller_queue.pop()
-                        if self.config['VERBOSE']: print data
+                        data['targets']['lights_on'] = self.gui.settings['lights_on'] #!TODO Dangerous way to send lights values to remote
+                        data['targets']['lights_off'] = self.gui.settings['lights_off']
+                        print 'CONTROLLER: ' + str(data)
                         while len(self.controller_queue) > queue_limit:
                             self.controller_queue.pop(0) # grab from out-queue
-                        response = self.push_to_remote(data)
+                        response = self.push_to_remote(data) # SEND TO REMOTE
                         if response is not None:
                             self.remote_queue.append(response)
                     except Exception as e:
@@ -274,18 +278,21 @@ class Node:
                 # Handled accrued responses/errors
                 m = len(self.remote_queue)
                 if m > 0:
-                    for e in self.remote_queue:
+                    for resp in self.remote_queue:
                         # ERROR CODES
-                        if e[0] == 200:
-                            print e
-                            self.remote_queue.pop() #!TODO Received response! possibly set new config values for controller!
-                        if e[0] == 400:
+                        if resp[0] == 200:
+                            print 'RESPONSE: ' + str(resp[1])
+                            if resp[1]['targets'] is not None:
+                                self.controller.set_params(resp[1]['targets']) # send target values within response to controller
+                                self.gui.settings.update(resp[1]['targets']) #!TODO Dangerous way to update GUI from remote
+                            self.remote_queue.pop()
+                        if resp[0] == 400:
                             print "WARN" + "400"     
                             self.remote_queue.pop() #!TODO bad connection!
-                        if e[0] == 500:
+                        if resp[0] == 500:
                             print "WARN" + "500"                            
                             self.remote_queue.pop() #!TODO server there, but uncooperative!
-                        if e[0] is None:
+                        if resp[0] is None:
                             print "WARN" + "???"     
                             self.remote_queue.pop()
                         else:

@@ -15,8 +15,10 @@ def index():
     if request.method == 'POST':
         data = request.json
         print 'NODE: ' + str(data)
-        doc_id = posts.insert(request.json)
-        print 'DOC_ID: ' + str(doc_id)
+        data['time'] = datetime.now()
+        
+        doc_id = posts.insert(data)
+        #print 'DOC_ID: ' + str(doc_id)
 
         # Check if there is any recent tasks
         uid = data['uid']        
@@ -24,17 +26,19 @@ def index():
         if task is not None:
             tasks_queue.remove({'_id' : task['_id']}) # remove action from queue
             task.pop('_id', None)
+            task.pop('uid', None)
+            targets = task
         else:
-            task = None
-        print 'TASK: ' + str(task)
+            targets = None
+        #print 'TASK: ' + str(task)
 
         # Push tasks to node
         response = {
             "status" : "ok",
             "doc_id" : str(doc_id),
-            "task" : task #!TODO: send task to node
+            "targets" : targets #!TODO: send task to node
         }        
-        print 'RESPONSE: ' + str(response)
+        #print 'RESPONSE: ' + str(response)
         return jsonify(response)
     elif request.method == 'GET':
         return render_template('index.html')
@@ -47,21 +51,29 @@ def show_nodes():
 
 @app.route('/node/<node_id>')
 def show_node_summary(node_id):
-    dt = timedelta(hours=1)
+    dt = timedelta(minutes=1)
     time_a = datetime.now()
     time_b = datetime.now() - dt
     doc_template = {
         "uid" : node_id,
-        "time" : {"$lt": time_b, "$gt": time_a} #!TODO search by time frame
+        "time" : {"$lt": time_a, "$gt": time_b} #!TODO search by time frame
     }
     docs = posts.find(doc_template)
-    d = docs.limit(1) #!TODO ensure that only
-    print d
-    watering_time = 60
-    cycle_time = 90
-    lights = 100
-    snapshot = [d for d in docs]
-    return render_template('node.html', node_id=node_id, snapshot=snapshot, watering_time=watering_time, cycle_time=cycle_time, lights=lights)
+    for d in docs:
+        print d
+        watering_time = d['targets']['watering_time'] #60
+        cycle_time = d['targets']['cycle_time'] #90
+        lights = d['targets']['lights'] #100
+        lights_off = d['targets']['lights_off'] #100
+        lights_on = d['targets']['lights_on'] #100
+    snapshot = []
+    return render_template('node.html', node_id=node_id,
+                                        snapshot=snapshot,
+                                        watering_time=watering_time,
+                                        cycle_time=cycle_time,
+                                        lights=lights,
+                                        lights_on=lights_on,
+                                        lights_off=lights_off)
 
 """
 API Functions
