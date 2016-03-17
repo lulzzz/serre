@@ -1,0 +1,10 @@
+{
+ "baud" : 9600,
+ "device" : "/dev/ttyUSB0",
+ "checksum" : true,
+ "data" : {
+    "lights" : ["IN_RANGE", "time", "lights_on", "lights_off"],
+    "watering_time": ["SETPOINT", "watering_time"],
+    "cycle_time" : ["SETPOINT", "cycle_time"]
+ }
+}
