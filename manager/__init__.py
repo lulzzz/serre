@@ -14,7 +14,7 @@ tasks_queue = db['queue']
 def index():
     if request.method == 'POST':
         data = request.json
-        print 'NODE: ' + str(data)
+        #print 'NODE: ' + str(data)
         data['time'] = datetime.now()
         
         doc_id = posts.insert(data)
