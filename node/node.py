@@ -277,6 +277,7 @@ class Node:
                     for e in self.remote_queue:
                         # ERROR CODES
                         if e[0] == 200:
+                            print e
                             self.remote_queue.pop() #!TODO Received response! possibly set new config values for controller!
                         if e[0] == 400:
                             print "WARN" + "400"     

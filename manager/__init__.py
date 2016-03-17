@@ -14,7 +14,7 @@ queue = db['queue']
 def index():
     if request.method == 'POST':
         data = request.json
-        _id = posts.insert(request.json)
+        doc_id = posts.insert(request.json)
         uid = data['uid']
         doc = queue.find_one({'uid' : uid})
         if doc is not None:
@@ -24,6 +24,7 @@ def index():
             task = None
         response = {
             "status" : "ok",
+            "doc_id" : doc_id,
             "task" : task #!TODO: send task to node
         }
         return jsonify(response)
@@ -64,7 +65,7 @@ def update_queue():
     else:
         status = "awful"
     response = {
-        "status" : status
+        "status" : "unknown"
     }
     return jsonify(response)
 
