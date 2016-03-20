@@ -9,187 +9,10 @@ import sys, os
 import random
 import Tkinter as tk
 from itertools import cycle
+import tools.gui_tk as rhumGUI
+import tools.lighting as rhumLighting
+import tools.controller as rhumController
 
-"""
-Controller Class
-
-SUPPORT:
-JSON-only communication messages.
-
-FUNCTIONS:
-checksum()
-parse()
-reset()
-"""
-class Controller:
-    def __init__(self, rules='v1'):
-        """
-        rules : a .ctrl JSON-like file for I/O rules
-        """
-        try:
-            if type(rules) == dict:
-                self.rules = rules
-            else:
-                cd = os.getcwd()
-                configpath = os.path.join(cd, 'controllers', rules, rules + '.ctrl')
-                with open(configpath) as jsonfile:
-                    self.rules = self.byteify(json.loads(jsonfile.read()))
-            
-            # Check .ctrl integrity
-            self.check = self.rules['checksum']
-            self.data = self.rules['data']
-            self.device = self.rules['device']
-            self.baud = self.rules['baud']
-
-        except Exception as e:
-            raise e
-
-        ## Attempt to grab port
-        self.port = serial.Serial(self.device, self.baud)
-
-    def byteify(self, input):
-        if isinstance(input, dict):
-            return {self.byteify(key) : self.byteify(value) for key,value in input.iteritems()}
-        elif isinstance(input, list):
-            return [self.byteify(element) for element in input]
-        elif isinstance(input, unicode):
-            return input.encode('utf-8')
-        else:
-            return input
-    def parse(self, interval=1.0, chars=256):
-        s = self.port.readline() #!TODO Need to handle very highspeed controllers, i.e. backlog
-        try:
-            d = json.loads(s) # parse as JSON
-            if self.checksum(d): # Checksum of parsed dictionary
-                return d
-            else:
-                return None
-        except Exception as e:
-            print str(e)
-            return None
-    def set_params(self, params):
-        """ Set the target values of the controller """
-        now = datetime.now()
-        hours_since_midnight = (now - now.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds() / 3600.0
-        params['time'] = hours_since_midnight
-        d = {k.encode('ascii'): v for (k, v) in params.items()}
-        targets = dict()
-        for k,r in self.rules['data'].iteritems():
-            try:
-                if r[0] == "SETPOINT": 
-                    targets[k] = int(d[r[1]])
-                if r[0] == "IN_RANGE": 
-                    limit_max = d[r[3]]
-                    limit_min = d[r[2]]
-                    metric = d[r[1]]
-                    if (metric < limit_max) and (metric > limit_min):
-                        targets[k] = 1
-                    else:
-                        targets[k] = 0
-            except Exception as e:
-                print str(e)
-        if len(targets) == len(self.rules['data']):
-            s = json.dumps(targets)
-            s.replace(' ', '')
-            self.port.write(s)
-            print "OK: Wrote to controller!"
-        else:
-            print "WARN: Missing parameters when sending to controller!"
-    def random(self, n):
-        r = [random.randint(0,i) for i in range(n)]
-        return r
-    def checksum(self, d, mod=256):
-        b = d['chksum']
-        chksum = 0
-        s = str(d)
-        s_clean = s.replace(' ', '')
-        for i in s_clean:
-            chksum += ord(i)
-        return chksum % mod
-    def reset(self):
-        pass
-
-"""
-Tkinter GUI Class (local usage only)
-"""
-class GUI(threading.Thread):
-    def __init__(self, settings='settings.json'):
-        self.active_changes = False
-        settings_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), settings)
-        if os.path.exists(settings_path):
-            with open(settings_path, 'r') as jsonfile:
-                self.settings = json.loads(jsonfile.read())  
-        else:
-            self.settings =  {} # by default is empty until set
-        self.active_changes = True
-        threading.Thread.__init__(self)
-    def run(self):
-        self.root = tk.Tk()
-        self.root.title("Hydroponics Controller")
-        self.root.geometry("640x480")
-        [self.root.rowconfigure(i,weight=1) for i in range(12)]
-        [self.root.columnconfigure(i,weight=1) for i in range(3)]
-        
-        # Lights
-        self.lights_on = tk.IntVar()
-        self.lights_off = tk.IntVar()
-        scale_lights_on = tk.Scale(self.root, from_=0.0, to=24.0, length=200, orient=tk.HORIZONTAL, variable = self.lights_on)
-        scale_lights_on.grid(column=0, row=2, ipady=20)
-        scale_lights_on.set(self.settings['lights_on'])
-        scale_lights_off = tk.Scale(self.root, from_=0.0, to=24.0, length=200, orient=tk.HORIZONTAL, variable = self.lights_off)
-        scale_lights_off.grid(column=0, row=3, ipady=20)
-        scale_lights_off.set(self.settings['lights_off'])
-        
-        # Watering
-        self.watering_time = tk.IntVar()
-        self.scale_watering_time = tk.Scale(self.root, from_=0.0, to=60.0, length=200, orient=tk.HORIZONTAL, variable = self.watering_time)
-        self.scale_watering_time.grid(column=1, row=2, ipady=20)
-        self.scale_watering_time.set(self.settings['watering_time'])
-
-        # Cycle Time
-        self.cycle_time = tk.IntVar()
-        self.scale_cycle_time = tk.Scale(self.root, from_=0.0, to=360.0, length=200, orient=tk.HORIZONTAL, variable = self.cycle_time)
-        self.scale_cycle_time.grid(column=2, row=2, ipady=20)
-        self.scale_cycle_time.set(self.settings['cycle_time'])
-
-        # Set Button
-        self.button_set = tk.Button(self.root, text="Set Configuration", command=self.set_config)
-        self.button_set.grid(column=1, row=4)
-
-        # Reset to saved values and start engine
-        self.set_config()
-        self.root.mainloop()
-    def set_config(self, settings='settings.json'): # called from button_set object
-        """
-        Updates the dictionary object for settings provided by the GUI
-        """        
-        self.settings['lights_on'] = self.lights_on.get()
-        self.settings['lights_off'] = self.lights_off.get()
-        self.settings['watering_time'] = self.watering_time.get()
-        self.settings['cycle_time'] = self.cycle_time.get()
-        settings_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), settings)
-        if os.path.exists(settings_path):
-            with open(settings_path, 'w') as jsonfile:
-                jsonfile.write(json.dumps(self.settings, indent=4))
-        self.active_changes = True # (flag) changes are active!
-    def get_new_targets(self):
-        """
-        Returns the dictionary object for settings provided by the GUI
-        """
-        self.active_changes = False # (flag) Once changes are retrieved, we assume that they will be sent to the controller
-        return self.settings
-    def update_config(self, settings):
-        """
-        Overrides the dictionary object for settings provided by the GUI
-        """
-        self.settings = settings
-        self.scale_watering_time.set(settings['cycle_time'])
-        self.scale_cycle_time.set(settings['cycle_time'])
-        self.scale_lights_off.set(settings['lights_off'])
-        self.scale_lights_on.set(settings['lights_on'])
-    def close(self):
-        self.root.destroy()
-        
 """
 Node Class
 This class is responsible for acting as the HTTP interface between the remote manager (and/or local GUI) and controller(s)
@@ -197,10 +20,11 @@ This class is responsible for acting as the HTTP interface between the remote ma
 class Node:
     def __init__(self, config=None):
         self.config = config
+        self.gui = None
         self.gui_exists = False
         self.threads_active = True
         self.remote_queue = [] # tasks set by the remote (start empty, e.g. local will override)
-        self.controller = Controller(rules=self.config['CTRL_CONF'])
+        self.controller = rhumController.Controller(rules=self.config['CTRL_CONF'])
         self.controller_queue = [] # the outgoing queue (start empty)
         threading.Thread(target=self.watchdog, args=(), kwargs={}).start()
     def watchdog(self):
@@ -221,6 +45,9 @@ class Node:
         try:
             r = None
             d['uid'] = self.config['UID']
+            d['node_type'] = self.config['CTRL_CONF']
+            print 'PUSH = ',
+            print(json.dumps(d, indent=4, sort_keys=True))
             addr = self.config['SERVER_ADDR']
             r = requests.post(addr, json=d)
             return (r.status_code, r.json())
@@ -239,13 +66,13 @@ class Node:
         * If the App has a task waiting, the task is returned as the response to the POST
         """
         if self.config['GUI']:
-            self.gui = GUI()
-            self.gui.start()
-            self.gui_exists = True
-            time.sleep(1) #!TODO wait for controller to connect
-            self.controller.set_params(self.gui.settings) #!TODO
-        else:
-            self.gui_exists = False
+            # Select GUI by controller type #!TODO set the node type      
+            if self.config['CTRL_CONF'] == 'v1':
+                self.gui = rhumGUI.GUI_v1() 
+            if self.gui:
+                self.gui.start()   
+        time.sleep(1) #!TODO wait for controller to connect
+        self.controller.set_params(self.gui.settings) #!TODO
             
         try:
             while ((len(self.remote_queue) < error_limit) or (error_limit is None)) and self.threads_active:
@@ -253,18 +80,25 @@ class Node:
                 
                 # Handle GUI
                 # Retrieve local changes to targets (overrides remote)
-                if self.gui_exists and self.gui.active_changes:
-                    gui_targets = self.gui.get_new_targets()
+                if (self.gui is not None) and self.gui.active_changes:
+                    print "------------------------------------"
+                    gui_targets = self.gui.get_new_targets() #!TODO Resolve multiple sources for setting targets, GUI should override
                     self.controller.set_params(gui_targets)
 
                 # Handle controller queue
                 n = len(self.controller_queue)
                 if n > 0:
+                    print "------------------------------------"
                     try:
                         data = self.controller_queue.pop()
+                        print 'CONTROLLER = ',
+                        print json.dumps(data, indent=4, sort_keys=True)
+                        for k in self.controller.rules.iterkeys():
+                            pass #!TODO Maybe use the controller rules for the filering
                         data['targets']['lights_on'] = self.gui.settings['lights_on'] #!TODO Dangerous way to send lights values to remote
                         data['targets']['lights_off'] = self.gui.settings['lights_off']
-                        print 'CONTROLLER: ' + str(data)
+                        data['targets']['photo1'] = self.gui.settings['photo1'] #!TODO Dangerous way to send lights values to remote
+                        data['targets']['photo2'] = self.gui.settings['photo2']
                         while len(self.controller_queue) > queue_limit:
                             self.controller_queue.pop(0) # grab from out-queue
                         response = self.push_to_remote(data) # SEND TO REMOTE
@@ -281,9 +115,11 @@ class Node:
                     for resp in self.remote_queue:
                         # ERROR CODES
                         if resp[0] == 200:
-                            print 'RESPONSE: ' + str(resp[1])
+                            print 'RESPONSE = ',
+                            print json.dumps(resp[1], indent=4, sort_keys=True)
                             if resp[1]['targets'] is not None:
                                 self.controller.set_params(resp[1]['targets']) # send target values within response to controller
+                                self.controller_queue = []
                                 self.gui.settings.update(resp[1]['targets']) #!TODO Dangerous way to update GUI from remote
                             self.remote_queue.pop()
                         if resp[0] == 400:

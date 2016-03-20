@@ -51,6 +51,10 @@ def show_nodes():
 
 @app.route('/node/<node_id>')
 def show_node_summary(node_id):
+    """
+    Grab the most recent data point provided by the node
+    Update the JS/HTML webapp to show the current settings
+    """
     dt = timedelta(minutes=1)
     time_a = datetime.now()
     time_b = datetime.now() - dt
@@ -58,22 +62,38 @@ def show_node_summary(node_id):
         "uid" : node_id,
         "time" : {"$lt": time_a, "$gt": time_b} #!TODO search by time frame
     }
+    # find the most recent data in the postsDB
     docs = posts.find(doc_template)
-    for d in docs:
-        print d
-        watering_time = d['targets']['watering_time'] #60
-        cycle_time = d['targets']['cycle_time'] #90
-        lights = d['targets']['lights'] #100
-        lights_off = d['targets']['lights_off'] #100
-        lights_on = d['targets']['lights_on'] #100
-    snapshot = []
-    return render_template('node.html', node_id=node_id,
-                                        snapshot=snapshot,
-                                        watering_time=watering_time,
-                                        cycle_time=cycle_time,
-                                        lights=lights,
-                                        lights_on=lights_on,
-                                        lights_off=lights_off)
+    if docs.count() > 0:
+        for d in docs:
+            print d
+            watering = d['targets']['watering']
+            cycle = d['targets']['cycle']
+            photo1 = d['targets']['photo1']
+            photo2 = d['targets']['photo2']
+            smc1 = d['targets']['smc1']
+            smc2 = d['targets']['smc2']
+            smc3 = d['targets']['smc3']
+            smc4 = d['targets']['smc4']
+            lights_off = d['targets']['lights_off']
+            lights_on = d['targets']['lights_on']
+        print docs.count()
+        snapshot = []
+        return render_template('node_v1.html', node_id = node_id,
+                                               snapshot = snapshot,
+                                               watering = watering,
+                                               cycle = cycle,
+                                               photo1 = photo1,
+                                               photo2 = photo2,
+                                               lights_on = lights_on,
+                                               lights_off = lights_off,
+                                               smc1 = smc1,
+                                               smc2 = smc2,
+                                               smc3 = smc3,
+                                               smc4 = smc4
+        )
+    else:
+        return render_template('node_offline.html', node_id = node_id)
 
 """
 API Functions
@@ -98,4 +118,4 @@ def update_queue():
     return jsonify(response)
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)

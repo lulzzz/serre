@@ -1,8 +1,14 @@
 {
     "lights_off": 21, 
     "lights_on": 14, 
-    "watering_time": 34, 
+    "photo1" : 50,
+    "photo2" : 50,
+    "smc1" : 50,
+    "smc2" : 50,
+    "smc3" : 50,
+    "smc4" : 50,
+    "watering": 34, 
     "lights": "0", 
     "time": 23.160361348333332, 
-    "cycle_time": 146
+    "cycle": 146
 }

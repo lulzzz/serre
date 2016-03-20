@@ -18,11 +18,17 @@ JSONPush = function() {
         type: "POST",
         data: {
             uid: "{{node_id}}",
-            lights: lights.valueAsNumber,
+            // Grab the current values of the HTML forms as inputs for the JSON POST
+            photo1: photo1.valueAsNumber,
+            photo2: photo1.valueAsNumber,
+            smc1: smc1.valueAsNumber,
+            smc2: smc2.valueAsNumber,
+            smc3: smc3.valueAsNumber,
+            smc4: smc4.valueAsNumber,
             lights_on: lights_on.valueAsNumber,
             lights_off: lights_off.valueAsNumber,
-            watering_time: watering_time.valueAsNumber,
-            cycle_time: cycle_time.valueAsNumber
+            watering: watering.valueAsNumber,
+            cycle: cycle.valueAsNumber
         },
         dataType: "text/json",
         success: function (result) {
@@ -56,12 +62,22 @@ Refresh = function() {
 
   <div data-role="main" class="ui-content">
     <form method="post" action="javascript:JSONPush()">
-      <label for="watering_time">Watering Time (s): </label>
-      <input type="range" name="watering_time" id="watering_time" value="{{watering_time}}" min="0" max="60">
-      <label for="cycle_time">Cycle Time (s): </label>
-      <input type="range" name="cycle_time" id="cycle_time" value="{{cycle_time}}" min="0" max="300">
-      <label for="lights">Lights (%): </label>
-      <input type="range" name="lights" id="lights" value="{{lights}}" min="0" max="100">
+      <label for="watering">Watering Time (s): </label>
+      <input type="range" name="watering" id="watering" value="{{watering}}" min="0" max="60">
+      <label for="cycle">Cycle Time (s): </label>
+      <input type="range" name="cycle" id="cycle" value="{{cycle}}" min="0" max="300">
+      <label for="smc1">Soil 1 (%): </label>
+      <input type="range" name="smc1" id="smc1" value="{{smc1}}" min="0" max="100">
+      <label for="smc2">Soil 2 (%): </label>
+      <input type="range" name="smc2" id="smc2" value="{{smc2}}" min="0" max="100">
+      <label for="smc3">Soil 3 (%): </label>
+      <input type="range" name="smc3" id="smc3" value="{{smc3}}" min="0" max="100">
+      <label for="smc4">Soil 4 (%): </label>
+      <input type="range" name="smc4" id="smc4" value="{{smc4}}" min="0" max="100">
+      <label for="photo1">Lights 1(%): </label>
+      <input type="range" name="photo1" id="photo1" value="{{photo1}}" min="0" max="100">
+      <label for="photo2">Lights 2 (%): </label>
+      <input type="range" name="photo2" id="photo2" value="{{photo2}}" min="0" max="100">
       <label for="lights_on">Lights On (Hours): </label>
       <input type="range" name="lights_on" id="lights_on" value="{{lights_on}}" min="0" max="24">
       <label for="lights_off">Lights Off (Hours): </label>
