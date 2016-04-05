@@ -79,7 +79,7 @@ if [ $ans = y -o $ans = Y -o $ans = yes -o $ans = Yes -o $ans = YES ]
         cp $CONFIG_PATH/iwlwifi-3160-14.ucode /lib/firmware/iwlwifi
         cp $CONFIG_PATH/rtl8723befw.bin /lib/firmware/rtlwifi
 	apt-get install wireless-tools -y -qq
-        cp $CONFIG_PATH/interfaces-ap /etc/network/interfaces
+        cp $CONFIG_PATH/interfaces /etc/network/interfaces
 	cp $CONFIG_PATH/hostapd.conf /etc/hostapd/
 	cp $CONFIG_PATH/dnsmasq.conf /etc/
         cp $CONFIG_PATH/dhclient.conf /etc/dhcp/
