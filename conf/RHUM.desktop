@@ -2,9 +2,9 @@
 Encoding=UTF-8
 Version=0.9.4
 Type=Application
-Name=Agri-Vision
+Name=RHUM
 Comment=
-Exec=/root/agri-vision/autostart &
+Exec=/root/rhum/autostart &
 StartupNotify=false
 Terminal=false
 Hidden=false
