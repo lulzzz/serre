@@ -13,87 +13,87 @@ const int DATA_LENGTH = 256;
 const int BAUD_RATE = 9600;
 const int INTERVAL = 20;
 // Soil Moisture Sensors (VH400)
-const int PIN_D_SENSOR_SMC_A = 2;
-const int PIN_D_SENSOR_SMC_B = 3;
-const int PIN_D_SENSOR_SMC_C = 4;
-const int PIN_D_SENSOR_SMC_D = 5;
+const int PIN_D_SENSOR_SMC_1 = 2;
+const int PIN_D_SENSOR_SMC_2 = 3;
+const int PIN_D_SENSOR_SMC_3 = 4;
+const int PIN_D_SENSOR_SMC_4 = 5;
 // Photosensors (950 Ohm)
-const int PIN_D_SENSOR_LIGHT_A = 6;
-const int PIN_D_SENSOR_LIGHT_B = 7;
+const int PIN_D_SENSOR_PHOTO_1 = 6;
+const int PIN_D_SENSOR_PHOTO_2 = 7;
 // Soil Moisture Content Relays
-const int PIN_D_RELAY_SMC_A = 8;
-const int PIN_D_RELAY_SMC_B = 9;
-const int PIN_D_RELAY_SMC_C = 10;
-const int PIN_D_RELAY_SMC_D = 11;
+const int PIN_D_RELAY_SMC_1 = 8;
+const int PIN_D_RELAY_SMC_2 = 9;
+const int PIN_D_RELAY_SMC_3 = 10;
+const int PIN_D_RELAY_SMC_4 = 11;
 // Light Relays
-const int PIN_D_RELAY_LIGHT_A = 12;
-const int PIN_D_RELAY_LIGHT_B = 13;
+const int PIN_D_RELAY_PHOTO_1 = 12;
+const int PIN_D_RELAY_PHOTO_2 = 13;
 // Analog Pins
-const int PIN_A_SENSOR_SMC_A = 0;
-const int PIN_A_SENSOR_SMC_B = 1;
-const int PIN_A_SENSOR_SMC_C = 2;
-const int PIN_A_SENSOR_SMC_D = 3;
-const int PIN_A_SENSOR_LIGHT_A = 4;
-const int PIN_A_SENSOR_LIGHT_B = 5;
-
+const int PIN_A_SENSOR_SMC_1 = 0;
+const int PIN_A_SENSOR_SMC_2 = 1;
+const int PIN_A_SENSOR_SMC_3 = 2;
+const int PIN_A_SENSOR_SMC_4 = 3;
+const int PIN_A_SENSOR_PHOTO_1 = 4;
+const int PIN_A_SENSOR_PHOTO_2 = 5;
 
 /* --- Variables --- */
 // JSON
 char tx_buffer[OUTPUT_LENGTH];
 char data_buffer[DATA_LENGTH];
+char targets_buffer[DATA_LENGTH];
 char rx_buffer[INPUT_LENGTH];
 StaticJsonBuffer<INPUT_LENGTH> json_rx;
 StaticJsonBuffer<OUTPUT_LENGTH> json_tx;
 
 // Relay States
-bool relay_smc_A = false;
-bool relay_smc_B = false;
-bool relay_smc_C = false;
-bool relay_smc_D = false;
-bool relay_light_A = false;
-bool relay_light_B = false;
+bool relay_smc_1 = false;
+bool relay_smc_2 = false;
+bool relay_smc_3 = false;
+bool relay_smc_4 = false;
+bool relay_photo_1 = false;
+bool relay_photo_2 = false;
 
 // Variables contenant les valeurs des capteurs
 int current_smc_1 = 0;
 int current_smc_2 = 0;
 int current_smc_3 = 0;
 int current_smc_4 = 0;
-int current_light_1 = 0;
-int current_light_2 = 0;
+int current_photo_1 = 0;
+int current_photo_2 = 0;
 int target_smc_1 = 0;
 int target_smc_2 = 0;
 int target_smc_3 = 0;
 int target_smc_4 = 0;
-int target_light_1 = 0;
-int target_light_2 = 0;
+int target_photo_1 = 0;
+int target_photo_2 = 0;
 
 void setup() {
 
   // Initialise I/O Pins
-  pinMode(PIN_D_SENSOR_SMC_A, OUTPUT);
-  digitalWrite(PIN_D_SENSOR_SMC_A, LOW);
-  pinMode(PIN_D_SENSOR_SMC_B, OUTPUT);
-  digitalWrite(PIN_D_SENSOR_SMC_B, LOW);
-  pinMode(PIN_D_SENSOR_SMC_C, OUTPUT);
-  digitalWrite(PIN_D_SENSOR_SMC_C, LOW);
-  pinMode(PIN_D_SENSOR_SMC_D, OUTPUT);
-  digitalWrite(PIN_D_SENSOR_SMC_D, LOW);
-  pinMode(PIN_D_SENSOR_LIGHT_A, OUTPUT);
-  digitalWrite(PIN_D_SENSOR_LIGHT_A, LOW);
-  pinMode(PIN_D_SENSOR_LIGHT_B, OUTPUT);
-  digitalWrite(PIN_D_SENSOR_LIGHT_B, LOW);
-  pinMode(PIN_D_RELAY_SMC_A, OUTPUT);
-  digitalWrite(PIN_D_RELAY_SMC_A, HIGH);
-  pinMode(PIN_D_RELAY_SMC_B, OUTPUT);
-  digitalWrite(PIN_D_RELAY_SMC_B, HIGH);
-  pinMode(PIN_D_RELAY_SMC_C, OUTPUT);
-  digitalWrite(PIN_D_RELAY_SMC_C, HIGH);
-  pinMode(PIN_D_RELAY_SMC_D, OUTPUT);
-  digitalWrite(PIN_D_RELAY_SMC_D, HIGH);
-  pinMode(PIN_D_RELAY_LIGHT_A, OUTPUT);
-  digitalWrite(PIN_D_RELAY_LIGHT_A, HIGH);
-  pinMode(PIN_D_RELAY_LIGHT_B, OUTPUT);
-  digitalWrite(PIN_D_RELAY_LIGHT_B, HIGH);
+  pinMode(PIN_D_SENSOR_SMC_1, OUTPUT);
+  digitalWrite(PIN_D_SENSOR_SMC_1, LOW);
+  pinMode(PIN_D_SENSOR_SMC_2, OUTPUT);
+  digitalWrite(PIN_D_SENSOR_SMC_2, LOW);
+  pinMode(PIN_D_SENSOR_SMC_3, OUTPUT);
+  digitalWrite(PIN_D_SENSOR_SMC_3, LOW);
+  pinMode(PIN_D_SENSOR_SMC_4, OUTPUT);
+  digitalWrite(PIN_D_SENSOR_SMC_4, LOW);
+  pinMode(PIN_D_SENSOR_PHOTO_1, OUTPUT);
+  digitalWrite(PIN_D_SENSOR_PHOTO_1, LOW);
+  pinMode(PIN_D_SENSOR_PHOTO_2, OUTPUT);
+  digitalWrite(PIN_D_SENSOR_PHOTO_2, LOW);
+  pinMode(PIN_D_RELAY_SMC_1, OUTPUT);
+  digitalWrite(PIN_D_RELAY_SMC_1, HIGH);
+  pinMode(PIN_D_RELAY_SMC_2, OUTPUT);
+  digitalWrite(PIN_D_RELAY_SMC_2, HIGH);
+  pinMode(PIN_D_RELAY_SMC_3, OUTPUT);
+  digitalWrite(PIN_D_RELAY_SMC_3, HIGH);
+  pinMode(PIN_D_RELAY_SMC_4, OUTPUT);
+  digitalWrite(PIN_D_RELAY_SMC_4, HIGH);
+  pinMode(PIN_D_RELAY_PHOTO_1, OUTPUT);
+  digitalWrite(PIN_D_RELAY_PHOTO_1, HIGH);
+  pinMode(PIN_D_RELAY_PHOTO_2, OUTPUT);
+  digitalWrite(PIN_D_RELAY_PHOTO_2, HIGH);
 
   // Initialize Serial
   Serial.begin(BAUD_RATE);
@@ -125,34 +125,45 @@ void loop() {
       target_smc_2 = dict_rx["smc2"];
       target_smc_3 = dict_rx["smc3"];
       target_smc_4 = dict_rx["smc4"];
-      target_light_1 = dict_rx["light1"];
-      target_light_2 = dict_rx["light2"];
+      target_photo_1 = dict_rx["photo1"];
+      target_photo_2 = dict_rx["photo2"];
+      dict_rx.printTo(targets_buffer, sizeof(targets_buffer));
     }
+  }
+  else {
+    JsonObject& dict_rx = json_rx.createObject();
+    dict_rx["smc1"] = target_smc_1;
+    dict_rx["smc2"] = target_smc_2;
+    dict_rx["smc3"] = target_smc_3;
+    dict_rx["smc4"] = target_smc_4;
+    dict_rx["photo1"] = target_photo_1;
+    dict_rx["photo2"] = target_photo_2;
+    dict_rx.printTo(targets_buffer, sizeof(targets_buffer));
   }
 
   // Read Sensors
-  current_smc_1 = litValeurHumidite(PIN_D_SENSOR_SMC_A, PIN_A_SENSOR_SMC_A);
-  current_smc_2 = litValeurHumidite(PIN_D_SENSOR_SMC_B, PIN_A_SENSOR_SMC_B);
-  current_smc_3 = litValeurHumidite(PIN_D_SENSOR_SMC_C, PIN_A_SENSOR_SMC_C);
-  current_smc_4 = litValeurHumidite(PIN_D_SENSOR_SMC_D, PIN_A_SENSOR_SMC_D);
-  current_light_1 = litValeurCapteurLumiere(PIN_D_SENSOR_LIGHT_A, PIN_A_SENSOR_LIGHT_A);
-  current_light_2 = litValeurCapteurLumiere(PIN_D_SENSOR_LIGHT_B, PIN_A_SENSOR_LIGHT_B);
+  current_smc_1 = litValeurHumidite(PIN_D_SENSOR_SMC_1, PIN_A_SENSOR_SMC_1);
+  current_smc_2 = litValeurHumidite(PIN_D_SENSOR_SMC_2, PIN_A_SENSOR_SMC_2);
+  current_smc_3 = litValeurHumidite(PIN_D_SENSOR_SMC_3, PIN_A_SENSOR_SMC_3);
+  current_smc_4 = litValeurHumidite(PIN_D_SENSOR_SMC_4, PIN_A_SENSOR_SMC_4);
+  current_photo_1 = litValeurCapteurLumiere(PIN_D_SENSOR_PHOTO_1, PIN_A_SENSOR_PHOTO_1);
+  current_photo_2 = litValeurCapteurLumiere(PIN_D_SENSOR_PHOTO_2, PIN_A_SENSOR_PHOTO_2);
 
   // Decide States
-  relay_smc_A = controlMoisture(target_smc_1, current_smc_1);
-  relay_smc_B = controlMoisture(target_smc_2, current_smc_2);
-  relay_smc_C = controlMoisture(target_smc_3, current_smc_3);
-  relay_smc_D = controlMoisture(target_smc_4, current_smc_4);
-  relay_light_A = controlLighting(target_light_1, current_light_1);
-  relay_light_B = controlLighting(target_light_2, current_light_2);
+  relay_smc_1 = controlMoisture(target_smc_1, current_smc_1);
+  relay_smc_2 = controlMoisture(target_smc_2, current_smc_2);
+  relay_smc_3 = controlMoisture(target_smc_3, current_smc_3);
+  relay_smc_4 = controlMoisture(target_smc_4, current_smc_4);
+  relay_photo_1 = controlLighting(target_photo_1, current_photo_1);
+  relay_photo_2 = controlLighting(target_photo_2, current_photo_2);
 
   // Set Relays
-  setRelay(PIN_D_RELAY_SMC_A, relay_smc_A); // Solenoid A
-  setRelay(PIN_D_RELAY_SMC_B, relay_smc_B); // Solenoid B
-  setRelay(PIN_D_RELAY_SMC_C, relay_smc_C); // Solenoid C
-  setRelay(PIN_D_RELAY_SMC_D, relay_smc_D); // Solenoid D
-  setRelay(PIN_D_RELAY_LIGHT_A, relay_light_A); // Light A
-  setRelay(PIN_D_RELAY_LIGHT_B, relay_light_A); // Light B
+  setRelay(PIN_D_RELAY_SMC_1, relay_smc_1); // Solenoid A
+  setRelay(PIN_D_RELAY_SMC_2, relay_smc_2); // Solenoid B
+  setRelay(PIN_D_RELAY_SMC_3, relay_smc_3); // Solenoid C
+  setRelay(PIN_D_RELAY_SMC_4, relay_smc_4); // Solenoid D
+  setRelay(PIN_D_RELAY_PHOTO_1, relay_photo_1); // Light A
+  setRelay(PIN_D_RELAY_PHOTO_2, relay_photo_1); // Light B
 
   // Transmit
   JsonObject& dict_tx = json_tx.createObject();
@@ -160,10 +171,10 @@ void loop() {
   dict_tx["smc2"] = current_smc_2;
   dict_tx["smc3"] = current_smc_3;
   dict_tx["smc4"] = current_smc_4;
-  dict_tx["light1"] = current_light_1;
-  dict_tx["light2"] = current_light_2;
+  dict_tx["photo1"] = current_photo_1;
+  dict_tx["photo2"] = current_photo_2;
   dict_tx.printTo(data_buffer, sizeof(data_buffer));
-  sprintf(tx_buffer, "{\"data\":%s,\"chksum\":%d}", data_buffer, checksum(data_buffer));
+  sprintf(tx_buffer, "{\"data\":%s,\"targets\":%s,\"chksum\":%d}", data_buffer, targets_buffer, checksum(data_buffer));
   Serial.println(tx_buffer);
 }
 
