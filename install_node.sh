@@ -32,6 +32,9 @@ if [ $ans = y -o $ans = Y -o $ans = yes -o $ans = Yes -o $ans = YES ]
         cp $CONFIG_PATH/unclutter /etc/default/
         echo "Configuring Autostart ..."
 	cp conf/RHUM.desktop /root/.config/autostart
+	read -p "User: " user
+	/usr/lib/i386-linux-gnu/lightdm/lightdm-set-defaults --autologin $user # prompt for username
+
 fi
 if [ $ans = n -o $ans = N -o $ans = no -o $ans = No -o $ans = NO ]
     then
