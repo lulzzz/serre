@@ -28,13 +28,11 @@ fi
 read -p "Do you want to setup GUI? [y/n] " ans
 if [ $ans = y -o $ans = Y -o $ans = yes -o $ans = Yes -o $ans = YES ]
     then
-        echo "Removing LightDM..."
-        update-rc.d -f lightdm remove || service lightdm remove
         echo "Disabling Mouse ..."
         apt-get install unclutter
         cp $CONFIG_PATH/unclutter /etc/default/
         echo "Configuring Autostart ..."
-	cp configs/RHUM.desktop /root/.config/autostart
+	cp conf/RHUM.desktop /root/.config/autostart
 fi
 if [ $ans = n -o $ans = N -o $ans = no -o $ans = No -o $ans = NO ]
     then
@@ -46,7 +44,7 @@ if [ $ans = y -o $ans = Y -o $ans = yes -o $ans = Yes -o $ans = YES ]
     then
         echo "Configuring daemon (will run in background without GUI) ..."
 	cd $BIN_PATH
-        cp agcv /etc/init.d/
+        cp rhum /etc/init.d/
         chmod +x /etc/init.d/rhum
         update-rc.d rhum defaults
         cd $INSTALL_PATH
