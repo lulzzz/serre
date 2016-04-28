@@ -4,6 +4,8 @@
 
 // Libraries
 #include <ArduinoJson.h>
+
+// Prototypes
 int getAverage(int, int);
 int checksum(char *);
 
