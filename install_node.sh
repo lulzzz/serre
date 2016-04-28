@@ -33,6 +33,7 @@ if [ $ans = y -o $ans = Y -o $ans = yes -o $ans = Yes -o $ans = YES ]
         echo "Configuring Autostart ..."
 	cp conf/RHUM.desktop /home/trevor/.config/autostart
 	read -p "User: " user
+	usermod -a -G dialout $user
 	/usr/lib/i386-linux-gnu/lightdm/lightdm-set-defaults --autologin $user # prompt for username
 
 fi
