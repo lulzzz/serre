@@ -1,0 +1,7 @@
+#!/bin/sh
+# This script:
+# 1. Navigates to the PATH
+# 2. Forces the screen to remain on
+# 3. Starts the app
+
+python node/node.py
