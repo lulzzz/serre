@@ -14,5 +14,5 @@ ARDUINO_DIR = /usr/share/arduino
 TARGET = v1
 BOARD_TAG = uno
 ARDUINO_PORT = /dev/ttyACM0
-ARDUINO_LIBS = ArduinoJson
+ARDUINO_LIBS = ArduinoJson RunningMedian
 include /usr/share/arduino/Arduino.mk

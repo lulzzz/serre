@@ -4,6 +4,8 @@
 
 // Libraries
 #include <ArduinoJson.h>
+int getAverage(int, int);
+int checksum(char *);
 
 // Contants
 const int BAUD = 9600;
