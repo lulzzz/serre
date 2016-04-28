@@ -13,7 +13,7 @@ cp $CONFIG_PATH/sources.list /etc/apt/
 apt-get update
 
 # Update Kernel
-read -p "Update kernel [y/n]? " ans
+read -p "Update kernel? [y/n] " ans
 if [ $ans = y -o $ans = Y -o $ans = yes -o $ans = Yes -o $ans = YES ]
     then
         dpkg -i $CONFIG_PATH/kernel/linux-headers-4.2.0*.deb
@@ -25,7 +25,7 @@ if [ $ans = n -o $ans = N -o $ans = no -o $ans = No -o $ans = NO ]
 fi
 
 # GUI
-read -p "Do you want to setup GUI [y/n]? " ans
+read -p "Do you want to setup GUI? [y/n] " ans
 if [ $ans = y -o $ans = Y -o $ans = yes -o $ans = Yes -o $ans = YES ]
     then
         echo "Removing LightDM..."
@@ -34,21 +34,21 @@ if [ $ans = y -o $ans = Y -o $ans = yes -o $ans = Yes -o $ans = YES ]
         apt-get install unclutter
         cp $CONFIG_PATH/unclutter /etc/default/
         echo "Configuring Autostart ..."
-	cp configs/Agri-Vision.desktop /root/.config/autostart
+	cp configs/RHUM.desktop /root/.config/autostart
 fi
 if [ $ans = n -o $ans = N -o $ans = no -o $ans = No -o $ans = NO ]
     then
         echo "Aborting..."
 fi
 
-read -p "Setup as daemon? [y/n]" ans
+read -p "Setup as daemon? [y/n] " ans
 if [ $ans = y -o $ans = Y -o $ans = yes -o $ans = Yes -o $ans = YES ]
     then
         echo "Configuring daemon (will run in background without GUI) ..."
 	cd $BIN_PATH
         cp agcv /etc/init.d/
-        chmod +x /etc/init.d/agcv
-        update-rc.d agcv defaults
+        chmod +x /etc/init.d/rhum
+        update-rc.d rhum defaults
         cd $INSTALL_PATH
 fi
 if [ $ans = n -o $ans = N -o $ans = no -o $ans = No -o $ans = NO ]
