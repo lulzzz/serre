@@ -31,7 +31,7 @@ if [ $ans = y -o $ans = Y -o $ans = yes -o $ans = Yes -o $ans = YES ]
         apt-get install unclutter
         cp $CONFIG_PATH/unclutter /etc/default/
         echo "Configuring Autostart ..."
-	cp conf/RHUM.desktop /root/.config/autostart
+	cp conf/RHUM.desktop /home/trevor/.config/autostart
 	read -p "User: " user
 	/usr/lib/i386-linux-gnu/lightdm/lightdm-set-defaults --autologin $user # prompt for username
 
