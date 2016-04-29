@@ -1,6 +1,34 @@
 ArduinoJson: change log
 =======================
 
+v5.2.0
+------
+
+* Added `JsonVariant::as<char*>()` as a synonym for `JsonVariant::as<const char*>()` (issue #257)
+* Added example `JsonHttpClient` (issue #256)
+* Added `JsonArray::copyTo()` and `JsonArray::copyFrom()` (issue #254)
+* Added `RawJson()` to insert pregenerated JSON portions (issue #259)
+
+v5.1.1
+------
+
+* Removed `String` duplication when one replaces a value in a `JsonObject` (PR #232 by @ulion)
+
+v5.1.0
+------
+
+* Added support of `long long` (issue #171)
+* Moved all build settings to `ArduinoJson/Configuration.hpp`
+
+**BREAKING CHANGE**:
+If you defined `ARDUINOJSON_ENABLE_STD_STREAM`, you now need to define it to `1`.
+
+v5.0.8
+------
+
+* Made the library compatible with [PlatformIO](http://platformio.org/) (issue #181)
+* Fixed `JsonVariant::is<bool>()` that was incorrectly returning false (issue #214)
+
 v5.0.7
 ------
 

@@ -7,15 +7,16 @@
 
 #pragma once
 
-#include "../Arduino/Print.hpp"
-
 namespace ArduinoJson {
-namespace Internals {
+namespace TypeTraits {
 
-// A dummy Print implementation used in JsonPrintable::measureLength()
-class DummyPrint : public Print {
- public:
-  virtual size_t write(uint8_t) { return 1; }
+// A meta-function that return the type T if Condition is true.
+template <bool Condition, typename T = void>
+struct EnableIf {};
+
+template <typename T>
+struct EnableIf<true, T> {
+  typedef T type;
 };
 }
 }

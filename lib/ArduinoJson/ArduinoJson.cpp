@@ -6,87 +6,14 @@
 // In that case, just delete the current installation and install the package.
 
 
-// src/Arduino/Print.cpp
-//
-// Copyright Benoit Blanchon 2014-2015
-// MIT License
-//
-// Arduino JSON library
-// https://github.com/bblanchon/ArduinoJson
-
-#ifndef ARDUINO
-
-#include "include/ArduinoJson/Arduino/Print.hpp"
-
-#include <math.h>   // for isnan() and isinf()
-#include <stdio.h>  // for sprintf()
-
-// only for GCC 4.9+
-#if defined(__GNUC__) && \
-    (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 9))
-#pragma GCC diagnostic ignored "-Wfloat-conversion"
-#endif
-
-// Visual Studo 2012 didn't have isnan, nor isinf
-#if defined(_MSC_VER) && _MSC_VER <= 1700
-#include <float.h>
-#define isnan(x) _isnan(x)
-#define isinf(x) (!_finite(x))
-#endif
-
-size_t Print::print(const char s[]) {
-  size_t n = 0;
-  while (*s) {
-    n += write(*s++);
-  }
-  return n;
-}
-
-size_t Print::print(double value, int digits) {
-  // https://github.com/arduino/Arduino/blob/db8cbf24c99dc930b9ccff1a43d018c81f178535/hardware/arduino/sam/cores/arduino/Print.cpp#L218
-  if (isnan(value)) return print("nan");
-  if (isinf(value)) return print("inf");
-
-  char tmp[32];
-
-  // https://github.com/arduino/Arduino/blob/db8cbf24c99dc930b9ccff1a43d018c81f178535/hardware/arduino/sam/cores/arduino/Print.cpp#L220
-  bool isBigDouble = value > 4294967040.0 || value < -4294967040.0;
-
-  if (isBigDouble) {
-    // Arduino's implementation prints "ovf"
-    // We prefer trying to use scientific notation, since we have sprintf
-    sprintf(tmp, "%g", value);
-  } else {
-    // Here we have the exact same output as Arduino's implementation
-    sprintf(tmp, "%.*f", digits, value);
-  }
-
-  return print(tmp);
-}
-
-size_t Print::print(long value) {
-  char tmp[32];
-  sprintf(tmp, "%ld", value);
-  return print(tmp);
-}
-
-size_t Print::print(int value) {
-  char tmp[32];
-  sprintf(tmp, "%d", value);
-  return print(tmp);
-}
-
-size_t Print::println() { return write('\r') + write('\n'); }
-
-#endif
-
 // src/Internals/Comments.cpp
 //
-// Copyright Benoit Blanchon 2014-2015
+// Copyright Benoit Blanchon 2014-2016
 // MIT License
 //
 // Arduino JSON library
 // https://github.com/bblanchon/ArduinoJson
+// If you like this project, please add a star!
 
 #include "include/ArduinoJson/Internals/Comments.hpp"
 
@@ -136,26 +63,29 @@ const char *ArduinoJson::Internals::skipSpacesAndComments(const char *ptr) {
 
 // src/Internals/Encoding.cpp
 //
-// Copyright Benoit Blanchon 2014-2015
+// Copyright Benoit Blanchon 2014-2016
 // MIT License
 //
 // Arduino JSON library
 // https://github.com/bblanchon/ArduinoJson
+// If you like this project, please add a star!
 
 #include "include/ArduinoJson/Internals/Encoding.hpp"
 
 // How to escape special chars:
 // _escapeTable[2*i+1] => the special char
 // _escapeTable[2*i] => the char to use instead
-const char ArduinoJson::Internals::Encoding::_escapeTable[] = "\"\"\\\\b\bf\fn\nr\rt\t";
+const char ArduinoJson::Internals::Encoding::_escapeTable[] =
+    "\"\"\\\\b\bf\fn\nr\rt\t";
 
 // src/Internals/IndentedPrint.cpp
 //
-// Copyright Benoit Blanchon 2014-2015
+// Copyright Benoit Blanchon 2014-2016
 // MIT License
 //
 // Arduino JSON library
 // https://github.com/bblanchon/ArduinoJson
+// If you like this project, please add a star!
 
 #include "include/ArduinoJson/Internals/IndentedPrint.hpp"
 
@@ -183,11 +113,12 @@ inline size_t IndentedPrint::writeTabs() {
 
 // src/Internals/JsonParser.cpp
 //
-// Copyright Benoit Blanchon 2014-2015
+// Copyright Benoit Blanchon 2014-2016
 // MIT License
 //
 // Arduino JSON library
 // https://github.com/bblanchon/ArduinoJson
+// If you like this project, please add a star!
 
 #include "include/ArduinoJson/Internals/JsonParser.hpp"
 
@@ -379,18 +310,19 @@ bool JsonParser::parseStringTo(JsonVariant *destination) {
   if (hasQuotes) {
     *destination = value;
   } else {
-    *destination = Unparsed(value);
+    *destination = RawJson(value);
   }
   return true;
 }
 
 // src/Internals/List.cpp
 //
-// Copyright Benoit Blanchon 2014-2015
+// Copyright Benoit Blanchon 2014-2016
 // MIT License
 //
 // Arduino JSON library
 // https://github.com/bblanchon/ArduinoJson
+// If you like this project, please add a star!
 
 #include "include/ArduinoJson/Internals/List.hpp"
 
@@ -438,11 +370,12 @@ template class ArduinoJson::Internals::List<JsonVariant>;
 
 // src/Internals/Prettyfier.cpp
 //
-// Copyright Benoit Blanchon 2014-2015
+// Copyright Benoit Blanchon 2014-2016
 // MIT License
 //
 // Arduino JSON library
 // https://github.com/bblanchon/ArduinoJson
+// If you like this project, please add a star!
 
 #include "include/ArduinoJson/Internals/Prettyfier.hpp"
 
@@ -527,11 +460,12 @@ size_t Prettyfier::unindentIfNeeded() {
 
 // src/Internals/StaticStringBuilder.cpp
 //
-// Copyright Benoit Blanchon 2014-2015
+// Copyright Benoit Blanchon 2014-2016
 // MIT License
 //
 // Arduino JSON library
 // https://github.com/bblanchon/ArduinoJson
+// If you like this project, please add a star!
 
 #include "include/ArduinoJson/Internals/StaticStringBuilder.hpp"
 
@@ -547,11 +481,12 @@ size_t StaticStringBuilder::write(uint8_t c) {
 
 // src/JsonArray.cpp
 //
-// Copyright Benoit Blanchon 2014-2015
+// Copyright Benoit Blanchon 2014-2016
 // MIT License
 //
 // Arduino JSON library
 // https://github.com/bblanchon/ArduinoJson
+// If you like this project, please add a star!
 
 #include "include/ArduinoJson/JsonArray.hpp"
 
@@ -567,20 +502,6 @@ JsonArray::node_type *JsonArray::getNodeAt(size_t index) const {
   node_type *node = _firstNode;
   while (node && index--) node = node->next;
   return node;
-}
-
-JsonArray &JsonArray::createNestedArray() {
-  if (!_buffer) return JsonArray::invalid();
-  JsonArray &array = _buffer->createArray();
-  add(array);
-  return array;
-}
-
-JsonObject &JsonArray::createNestedObject() {
-  if (!_buffer) return JsonObject::invalid();
-  JsonObject &object = _buffer->createObject();
-  add(object);
-  return object;
 }
 
 void JsonArray::removeAt(size_t index) { removeNode(getNodeAt(index)); }
@@ -603,11 +524,12 @@ void JsonArray::writeTo(JsonWriter &writer) const {
 
 // src/JsonBuffer.cpp
 //
-// Copyright Benoit Blanchon 2014-2015
+// Copyright Benoit Blanchon 2014-2016
 // MIT License
 //
 // Arduino JSON library
 // https://github.com/bblanchon/ArduinoJson
+// If you like this project, please add a star!
 
 #include "include/ArduinoJson/JsonBuffer.hpp"
 
@@ -647,11 +569,12 @@ char *JsonBuffer::strdup(const char *source, size_t length) {
 
 // src/JsonObject.cpp
 //
-// Copyright Benoit Blanchon 2014-2015
+// Copyright Benoit Blanchon 2014-2016
 // MIT License
 //
 // Arduino JSON library
 // https://github.com/bblanchon/ArduinoJson
+// If you like this project, please add a star!
 
 #include "include/ArduinoJson/JsonObject.hpp"
 
@@ -666,35 +589,7 @@ using namespace ArduinoJson::Internals;
 
 JsonObject JsonObject::_invalid(NULL);
 
-JsonObject::node_type *JsonObject::getOrCreateNodeAt(JsonObjectKey key) {
-  node_type *existingNode = getNodeAt(key);
-  if (existingNode) return existingNode;
-
-  node_type *newNode = addNewNode();
-  return newNode;
-}
-
-template <typename TKey>
-JsonArray &JsonObject::createArrayAt(TKey key) {
-  if (!_buffer) return JsonArray::invalid();
-  JsonArray &array = _buffer->createArray();
-  setNodeAt<TKey, const JsonVariant &>(key, array);
-  return array;
-}
-template JsonArray &JsonObject::createArrayAt<const char *>(const char *);
-template JsonArray &JsonObject::createArrayAt<const String &>(const String &);
-
-template <typename TKey>
-JsonObject &JsonObject::createObjectAt(TKey key) {
-  if (!_buffer) return JsonObject::invalid();
-  JsonObject &array = _buffer->createObject();
-  setNodeAt<TKey, const JsonVariant &>(key, array);
-  return array;
-}
-template JsonObject &JsonObject::createObjectAt<const char *>(const char *);
-template JsonObject &JsonObject::createObjectAt<const String &>(const String &);
-
-JsonObject::node_type *JsonObject::getNodeAt(JsonObjectKey key) const {
+JsonObject::node_type *JsonObject::getNodeAt(const char *key) const {
   for (node_type *node = _firstNode; node; node = node->next) {
     if (!strcmp(node->content.key, key)) return node;
   }
@@ -721,11 +616,12 @@ void JsonObject::writeTo(JsonWriter &writer) const {
 
 // src/JsonVariant.cpp
 //
-// Copyright Benoit Blanchon 2014-2015
+// Copyright Benoit Blanchon 2014-2016
 // MIT License
 //
 // Arduino JSON library
 // https://github.com/bblanchon/ArduinoJson
+// If you like this project, please add a star!
 
 #include "include/ArduinoJson/JsonVariant.hpp"
 
@@ -739,31 +635,7 @@ using namespace ArduinoJson::Internals;
 
 namespace ArduinoJson {
 
-template <typename TFloat>
-static TFloat parse(const char *);
-
-template <>
-float parse<float>(const char *s) {
-  return static_cast<float>(strtod(s, NULL));
-}
-
-template <>
-double parse<double>(const char *s) {
-  return strtod(s, NULL);
-}
-
-template <>
-long parse<long>(const char *s) {
-  return strtol(s, NULL, 10);
-}
-
-template <>
-int parse<int>(const char *s) {
-  return atoi(s);
-}
-
-template <>
-const char *JsonVariant::as<const char *>() const {
+const char *JsonVariant::asString() const {
   if (_type == JSON_UNPARSED && _content.asString &&
       !strcmp("null", _content.asString))
     return NULL;
@@ -783,22 +655,7 @@ JsonFloat JsonVariant::asFloat() const {
   return 0.0;
 }
 
-JsonInteger JsonVariant::asInteger() const {
-  if (_type == JSON_INTEGER || _type == JSON_BOOLEAN) return _content.asInteger;
-
-  if (_type >= JSON_FLOAT_0_DECIMALS)
-    return static_cast<JsonInteger>(_content.asFloat);
-
-  if ((_type == JSON_STRING || _type == JSON_UNPARSED) && _content.asString) {
-    if (!strcmp("true", _content.asString)) return 1;
-    return parse<JsonInteger>(_content.asString);
-  }
-
-  return 0L;
-}
-
-template <>
-String JsonVariant::as<String>() const {
+String JsonVariant::toString() const {
   String s;
   if ((_type == JSON_STRING || _type == JSON_UNPARSED) &&
       _content.asString != NULL)
@@ -808,8 +665,16 @@ String JsonVariant::as<String>() const {
   return s;
 }
 
-template <>
-bool JsonVariant::is<signed long>() const {
+bool JsonVariant::isBoolean() const {
+  if (_type == JSON_BOOLEAN) return true;
+
+  if (_type != JSON_UNPARSED || _content.asString == NULL) return false;
+
+  return !strcmp(_content.asString, "true") ||
+         !strcmp(_content.asString, "false");
+}
+
+bool JsonVariant::isInteger() const {
   if (_type == JSON_INTEGER) return true;
 
   if (_type != JSON_UNPARSED || _content.asString == NULL) return false;
@@ -821,8 +686,7 @@ bool JsonVariant::is<signed long>() const {
   return *end == '\0' && errno == 0;
 }
 
-template <>
-bool JsonVariant::is<double>() const {
+bool JsonVariant::isFloat() const {
   if (_type >= JSON_FLOAT_0_DECIMALS) return true;
 
   if (_type != JSON_UNPARSED || _content.asString == NULL) return false;

@@ -7,15 +7,15 @@
 
 #pragma once
 
-#include "../Arduino/Print.hpp"
-
 namespace ArduinoJson {
-namespace Internals {
 
-// A dummy Print implementation used in JsonPrintable::measureLength()
-class DummyPrint : public Print {
+// A special type of data that can be used to insert pregenerated JSON portions.
+class RawJson {
  public:
-  virtual size_t write(uint8_t) { return 1; }
+  explicit RawJson(const char* str) : _str(str) {}
+  operator const char*() const { return _str; }
+
+ private:
+  const char* _str;
 };
-}
 }
