@@ -5,6 +5,17 @@
 /* --- Libraries --- */
 #include <ArduinoJson.h>
 
+/* --- Prototypes --- */
+int FloatAIntEtArondie(float valeur);
+int litValeurCapteur(const int PIN_ECRITURE, const int PIN_LECTURE, const int NOMBRE_DE_LECTURE);
+float litValeurCapteurVoltage(const int PIN_ECRITURE, const int PIN_LECTURE, const int NOMBRE_DE_LECTURE);
+int litValeurCapteurLumiere (const int PIN_ECRITURE, const int PIN_LECTURE);
+int litValeurHumidite (const int PIN_ECRITURE, const int PIN_LECTURE);
+void setRelay(int pin, bool state);
+bool controlMoisture(int target, int current);
+int checksum(char *buf) {
+  
+}
 /* --- Constants --- */
 // JSON / Serial
 const int INPUT_LENGTH = 256;
