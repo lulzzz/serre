@@ -11,8 +11,7 @@
 #	make upload
 
 ARDUINO_DIR = /usr/share/arduino
-TARGET = bronfman
+TARGET = dummy_lights
 BOARD_TAG = uno
-ARDUINO_PORT = /dev/ttyACM0
-ARDUINO_LIBS = ArduinoJson
+ARDUINO_PORT = /dev/ttyUSB0
 include /usr/share/arduino/Arduino.mk
