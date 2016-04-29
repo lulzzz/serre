@@ -4,8 +4,10 @@
  "lights" : "Lamp",
  "checksum" : true,
  "data" : {
-    "lights" : ["IN_RANGE", "time", "lights_on", "lights_off"],
-    "watering": ["SETPOINT", "watering"],
-    "cycle" : ["SETPOINT", "cycle"]
+    "l" : ["IN_RANGE", "time", "lights_on", "lights_off"],
+    "s1" : ["SETPOINT", "time", "soil_1"],
+    "s2" : ["SETPOINT", "time", "soil_2"],
+    "s3" : ["SETPOINT", "time", "soil_3"],
+    "s4" : ["SETPOINT", "time", "soil_4"]
  }
 }

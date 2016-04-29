@@ -18,6 +18,7 @@ Node Class
 This class is responsible for acting as the HTTP interface between the remote manager (and/or local GUI) and controller(s)
 """
 class Node:
+
     def __init__(self, config=None):
         self.config = config
         self.gui = None
@@ -27,10 +28,19 @@ class Node:
         self.controller = rhumController.Controller(rules=self.config['CTRL_CONF'])
         self.controller_queue = [] # the outgoing queue (start empty)
         threading.Thread(target=self.watchdog, args=(), kwargs={}).start()
+
     def watchdog(self):
+        """
+        WatchDog Function
+        Threaded function to listen for data from controller and parse it into Python readable info
+        Associates each controller event with a datetime stamp
+        Dies if threads_active becomes False
+        """
         while self.threads_active == True:
             try:
-                d = self.controller.parse()
+                d = self.controller.parse() # Grab the latest response from the controller
+                if d is None:
+                    print("Checksum failed when reading controller!")
                 now = datetime.now()
                 datetimestamp = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S") # grab the current time-stamp for the sample
                 d['time'] = datetimestamp
@@ -41,6 +51,10 @@ class Node:
     def push_to_remote(self, d):
         """
         Push current local settings to the remote manager
+        Arguments:
+            dict
+        Returns:
+            tuple of (code, msg)
         """
         try:
             r = None
@@ -56,24 +70,33 @@ class Node:
                 return (r.status_code, r.reason)
             else:
                 return (400, 'Lost server')
+
     def run(self, queue_limit=16, error_limit=None, gui=False, freq=10):
         """
         Run node as HTTP daemon
+
         Notes:
-        * Node-App configuration is Push-Pull
-        * For each iteration, the latest data gathered from the Controller is pushed from the Queue
-        * Data is pushed to the App via HTTP Post to SERVER_ADDR
-        * If the App has a task waiting, the task is returned as the response to the POST
+            * Node-App configuration is Push-Pull
+            * For each iteration, the latest data gathered from the Controller is pushed from the Queue
+            * Data is pushed to the App via HTTP Post to SERVER_ADDR
+            * If the App has a task waiting, the task is returned as the response to the POST
         """
         if self.config['GUI']:
-            # Select GUI by controller type #!TODO set the node type      
+            # Select GUI by controller type
             if self.config['CTRL_CONF'] == 'v1':
-                self.gui = rhumGUI.GUI_v1() 
+                self.gui = rhumGUI.GUI_v1()
+            if self.config['CTRL_CONF'] == 'bronfman':
+                self.gui = rhumGUI.GUI_bronfman()
+            else:
+                print("GUI not found for \"%s\" configuration." % (self.config['CTRL_CONF']))
+                self.threads_active = False
+                exit(0)
+            # If GUI started successfully, run as thread
             if self.gui:
                 self.gui.start()   
         time.sleep(1) #!TODO wait for controller to connect
-        self.controller.set_params(self.gui.settings) #!TODO
-            
+        initial_params = self.controller.set_params(self.gui.settings) #!TODO
+        print initial_params 
         try:
             while ((len(self.remote_queue) < error_limit) or (error_limit is None)) and self.threads_active:
                 time.sleep(1 / float(freq)) # slow down everyone, we're moving too fast
@@ -83,8 +106,9 @@ class Node:
                 if (self.gui is not None) and self.gui.active_changes:
                     print "------------------------------------"
                     gui_targets = self.gui.get_new_targets() #!TODO Resolve multiple sources for setting targets, GUI should override
-                    self.controller.set_params(gui_targets)
-
+                    print gui_targets
+                    updated_params = self.controller.set_params(gui_targets)
+                    print updated_params
                 # Handle controller queue
                 n = len(self.controller_queue)
                 if n > 0:
@@ -95,10 +119,6 @@ class Node:
                         print json.dumps(data, indent=4, sort_keys=True)
                         for k in self.controller.rules.iterkeys():
                             pass #!TODO Maybe use the controller rules for the filering
-                        data['targets']['lights_on'] = self.gui.settings['lights_on'] #!TODO Dangerous way to send lights values to remote
-                        data['targets']['lights_off'] = self.gui.settings['lights_off']
-                        data['targets']['photo1'] = self.gui.settings['photo1'] #!TODO Dangerous way to send lights values to remote
-                        data['targets']['photo2'] = self.gui.settings['photo2']
                         while len(self.controller_queue) > queue_limit:
                             self.controller_queue.pop(0) # grab from out-queue
                         response = self.push_to_remote(data) # SEND TO REMOTE
@@ -107,43 +127,47 @@ class Node:
                     except Exception as e:
                         print str(e)
                 else:
-                    d = {}
+                    data = {}
                     
                 # Handled accrued responses/errors
-                m = len(self.remote_queue)
-                if m > 0:
+                num_responses = len(self.remote_queue)
+                if num_responses > 0:
                     for resp in self.remote_queue:
                         # ERROR CODES
-                        if resp[0] == 200:
+                        response_code = resp[0]
+                        if response_code == 200:
                             print 'RESPONSE = ',
                             print json.dumps(resp[1], indent=4, sort_keys=True)
-                            if resp[1]['targets'] is not None:
-                                self.controller.set_params(resp[1]['targets']) # send target values within response to controller
+                            target_values = resp[1]['targets']
+                            if target_values is not None:
+                                self.controller.set_params(target_values) # send target values within response to controller
                                 self.controller_queue = []
-                                self.gui.settings.update(resp[1]['targets']) #!TODO Dangerous way to update GUI from remote
+                                self.gui.settings.update(target_values) #!TODO Dangerous way to update GUI from remote
                             self.remote_queue.pop()
-                        if resp[0] == 400:
+                        if response_code == 400:
                             print "WARN" + "400"     
                             self.remote_queue.pop() #!TODO bad connection!
-                        if resp[0] == 500:
+                        if response_code == 500:
                             print "WARN" + "500"                            
                             self.remote_queue.pop() #!TODO server there, but uncooperative!
-                        if resp[0] is None:
+                        if response_code is None:
                             print "WARN" + "???"     
                             self.remote_queue.pop()
                         else:
                             pass #!TODO Unknown errors!
-                # Summary
-                if d != {}:
-                    print "Queue: %d, Response: %s, Data: %s" % (n, str(ce), str(d['data']))
+                    # Summary
+                    if data != {}:
+                        print "Queue: %d, Response: %s, Data: %s" % (n, str(resp), str(data['data']))
             else:
                 print self.remote_queue #!TODO
         except KeyboardInterrupt:
             print "\nexiting..."
+            self.threads_active = False
+            exit(0)
         except Exception as e:
             print str(e)
-        self.threads_active = False
-        exit(0)
+            self.threads_active = False
+            exit(0)
     
 if __name__ == '__main__':
     if len(sys.argv) > 1:

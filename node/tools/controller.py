@@ -57,6 +57,7 @@ class Controller:
     def parse(self, interval=1.0, chars=256, force_read=False): 
         try:
             s = self.port.readline() #!TODO Need to handle very highspeed controllers, i.e. backlog
+            print s #!DEBUG
             d = json.loads(s) # parse as JSON
             self.port_is_readable = True
             if self.checksum(d): # Checksum of parsed dictionary
@@ -67,7 +68,15 @@ class Controller:
             print str(e)
             return None
     def set_params(self, params):
-        """ Set the target values of the controller """
+        """
+        Set the target values of the controller
+        This checks the .ctrl rules file for each of the defined rulesets
+        The named values in params are those which are passed either by the GUI or the remote host
+
+        Currently supported rules
+            * SETPOINT - Simply send the named value to the controller
+            * IN_RANGE - Compare two values, if input value is within that range send 1, else send 0
+        """
         now = datetime.now()
         hours_since_midnight = (now - now.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds() / 3600.0
         params['time'] = hours_since_midnight
@@ -87,17 +96,12 @@ class Controller:
                         targets[k] = 0
             except Exception as e:
                 print str(e)
-        if len(targets) == len(self.rules['data']):
-            s = json.dumps(targets)
-            s.replace(' ', '')
-            self.port.write(s)
-            print "OK: Wrote to controller!"
-            #!TODO Confirm that controller has correct settings
-        else:
-            print "WARN: Missing parameters when sending to controller! Check your nodes .ctrl file!"
-    def random(self, n):
-        r = [random.randint(0,i) for i in range(n)]
-        return r
+
+        # Send parameters to controller
+        s = json.dumps(targets)
+        s.replace(' ', '') # remove whitespace for serial transmission
+        self.port.write(s)
+        return s
     def checksum(self, d, mod=256):
         b = d['chksum']
         chksum = 0
