@@ -50,9 +50,6 @@ const int PIN_A_SENSOR_PHOTO_2 = 5;
 char data_buffer[DATA_LENGTH];
 char targets_buffer[DATA_LENGTH];
 char ser_buffer[OUTPUT_LENGTH];
-StaticJsonBuffer<INPUT_LENGTH> json_rx;
-StaticJsonBuffer<OUTPUT_LENGTH> json_tx;
-JsonObject& dict = json_tx.createObject();
 
 // Relay States
 bool relay_smc_1 = false; // Drip irrigation solenoid Bed #1, south
@@ -103,6 +100,7 @@ void setup() {
   Serial.begin(BAUD_RATE);
 
   // Initialize RX Buffer
+  StaticJsonBuffer<INPUT_LENGTH> json_rx;
   JsonObject& dict = json_rx.createObject();
   dict["s1"] = target_smc_1;
   dict["s2"] = target_smc_2;
@@ -114,9 +112,12 @@ void setup() {
 
 void loop() {
   delay(INTERVAL);
-
+  StaticJsonBuffer<INPUT_LENGTH> json_rx;
+  StaticJsonBuffer<OUTPUT_LENGTH> json_tx;
+  
   // Receive
   if (Serial.available() > 0) {
+    memset(&ser_buffer[0], 0, sizeof(ser_buffer));
     int i = 0;
     char c = ' ';
     while (c != '}') {
@@ -168,6 +169,7 @@ void loop() {
   setRelay(PIN_D_RELAY_LED, relay_led);
 
   // Transmit
+  JsonObject& dict = json_tx.createObject();
   dict["s1"] = current_smc_1;
   dict["s2"] = current_smc_2;
   dict["s3"] = current_smc_3;
@@ -181,7 +183,7 @@ void loop() {
 
 /* --- Functions --- */
 // Convertie un nombre � virgule en entier arrondi.
-int FloatAIntEtArondie(float valeur) {
+int roundFloat(float valeur) {
   int iTemp = (int)valeur;
   float fTemp = valeur - iTemp;
   if (fTemp > 0.5) {
@@ -219,7 +221,7 @@ int litValeurCapteurLumiere (const int PIN_ECRITURE, const int PIN_LECTURE) {
   const int VIN = 5; //Voltage d'arduino
   const float RESISTANCE_FIXE = 975; //vrai==975Ohm(sur paquet 1000Ohm) pour les 2!
   //retourne un entier contenant la r�sistance de la photor�sistance en Ohm � l'aide du principe de la division du voltage
-  return FloatAIntEtArondie(RESISTANCE_FIXE / ((VIN / litValeurCapteurVoltage(PIN_ECRITURE, PIN_LECTURE, NOMBREDELECTURE)) - 1));
+  return roundFloat(RESISTANCE_FIXE / ((VIN / litValeurCapteurVoltage(PIN_ECRITURE, PIN_LECTURE, NOMBREDELECTURE)) - 1));
 }
 
 // capteur vh400
