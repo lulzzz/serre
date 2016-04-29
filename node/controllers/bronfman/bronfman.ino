@@ -7,9 +7,9 @@
 
 /* --- Constants --- */
 // JSON / Serial
-const int INPUT_LENGTH = 512;
-const int OUTPUT_LENGTH = 512;
-const int DATA_LENGTH = 256;
+const int INPUT_LENGTH = 256;
+const int OUTPUT_LENGTH = 256;
+const int DATA_LENGTH = 128;
 const int BAUD_RATE = 9600;
 const int INTERVAL = 20;
 // Soil Moisture Sensors (VH400)
@@ -25,9 +25,8 @@ const int PIN_D_RELAY_SMC_1 = 8;
 const int PIN_D_RELAY_SMC_2 = 9;
 const int PIN_D_RELAY_SMC_3 = 10;
 const int PIN_D_RELAY_SMC_4 = 11;
-// Light Relays
-const int PIN_D_RELAY_PHOTO_1 = 12;
-const int PIN_D_RELAY_PHOTO_2 = 13;
+// Intercanopy LED Relay
+const int PIN_D_RELAY_LED = 12; // set to D13 if independent
 // Analog Pins
 const int PIN_A_SENSOR_SMC_1 = 0;
 const int PIN_A_SENSOR_SMC_2 = 1;
@@ -38,20 +37,19 @@ const int PIN_A_SENSOR_PHOTO_2 = 5;
 
 /* --- Variables --- */
 // JSON
-char tx_buffer[OUTPUT_LENGTH];
 char data_buffer[DATA_LENGTH];
 char targets_buffer[DATA_LENGTH];
-char rx_buffer[INPUT_LENGTH];
+char ser_buffer[OUTPUT_LENGTH];
 StaticJsonBuffer<INPUT_LENGTH> json_rx;
 StaticJsonBuffer<OUTPUT_LENGTH> json_tx;
+JsonObject& dict = json_tx.createObject();
 
 // Relay States
-bool relay_smc_1 = false;
-bool relay_smc_2 = false;
-bool relay_smc_3 = false;
-bool relay_smc_4 = false;
-bool relay_photo_1 = false;
-bool relay_photo_2 = false;
+bool relay_smc_1 = false; // Drip irrigation solenoid Bed #1, south
+bool relay_smc_2 = false; // Drip irrigation solenoid Bed #2, north
+bool relay_smc_3 = false; // Drip irrigation solenoid Bed #1, south
+bool relay_smc_4 = false; // Drip irrigation solenoid Bed #2, north
+bool relay_led = false; // Intercanopy LEDS Bed #1 & #2
 
 // Variables contenant les valeurs des capteurs
 int current_smc_1 = 0;
@@ -64,8 +62,6 @@ int target_smc_1 = 0;
 int target_smc_2 = 0;
 int target_smc_3 = 0;
 int target_smc_4 = 0;
-int target_photo_1 = 0;
-int target_photo_2 = 0;
 
 void setup() {
 
@@ -90,13 +86,20 @@ void setup() {
   digitalWrite(PIN_D_RELAY_SMC_3, HIGH);
   pinMode(PIN_D_RELAY_SMC_4, OUTPUT);
   digitalWrite(PIN_D_RELAY_SMC_4, HIGH);
-  pinMode(PIN_D_RELAY_PHOTO_1, OUTPUT);
-  digitalWrite(PIN_D_RELAY_PHOTO_1, HIGH);
-  pinMode(PIN_D_RELAY_PHOTO_2, OUTPUT);
-  digitalWrite(PIN_D_RELAY_PHOTO_2, HIGH);
+  pinMode(PIN_D_RELAY_LED, OUTPUT);
+  digitalWrite(PIN_D_RELAY_LED, HIGH);
 
   // Initialize Serial
   Serial.begin(BAUD_RATE);
+
+  // Initialize RX Buffer
+  JsonObject& dict = json_rx.createObject();
+  dict["s1"] = target_smc_1;
+  dict["s2"] = target_smc_2;
+  dict["s3"] = target_smc_3;
+  dict["s4"] = target_smc_4;
+  dict["l"] = (int)relay_led;
+  dict.printTo(targets_buffer, sizeof(targets_buffer));
 }
 
 void loop() {
@@ -112,33 +115,25 @@ void loop() {
         break;
       }
       else {
-        rx_buffer[i] = c;
+        ser_buffer[i] = c;
         i++;
       }
     }
     while (Serial.available() > 0) {
       Serial.read();  // Flush remaining characters
     }
-    JsonObject& dict_rx = json_rx.parseObject(rx_buffer);
-    if (dict_rx.success()) {
-      target_smc_1 = dict_rx["smc1"];
-      target_smc_2 = dict_rx["smc2"];
-      target_smc_3 = dict_rx["smc3"];
-      target_smc_4 = dict_rx["smc4"];
-      target_photo_1 = dict_rx["photo1"];
-      target_photo_2 = dict_rx["photo2"];
-      dict_rx.printTo(targets_buffer, sizeof(targets_buffer));
+    JsonObject& dict = json_rx.parseObject(ser_buffer);
+    if (dict.success()) {
+      target_smc_1 = dict["s1"];
+      target_smc_2 = dict["s2"];
+      target_smc_3 = dict["s3"];
+      target_smc_4 = dict["s4"];
+      relay_led = (bool)dict["l"];
+      dict.printTo(targets_buffer, sizeof(targets_buffer));
     }
-  }
-  else {
-    JsonObject& dict_rx = json_rx.createObject();
-    dict_rx["smc1"] = target_smc_1;
-    dict_rx["smc2"] = target_smc_2;
-    dict_rx["smc3"] = target_smc_3;
-    dict_rx["smc4"] = target_smc_4;
-    dict_rx["photo1"] = target_photo_1;
-    dict_rx["photo2"] = target_photo_2;
-    dict_rx.printTo(targets_buffer, sizeof(targets_buffer));
+    else {
+      Serial.println("Failed!");
+    }
   }
 
   // Read Sensors
@@ -149,33 +144,29 @@ void loop() {
   current_photo_1 = litValeurCapteurLumiere(PIN_D_SENSOR_PHOTO_1, PIN_A_SENSOR_PHOTO_1);
   current_photo_2 = litValeurCapteurLumiere(PIN_D_SENSOR_PHOTO_2, PIN_A_SENSOR_PHOTO_2);
 
-  // Decide States
+  // Control Irritation
   relay_smc_1 = controlMoisture(target_smc_1, current_smc_1);
   relay_smc_2 = controlMoisture(target_smc_2, current_smc_2);
   relay_smc_3 = controlMoisture(target_smc_3, current_smc_3);
   relay_smc_4 = controlMoisture(target_smc_4, current_smc_4);
-  relay_photo_1 = controlLighting(target_photo_1, current_photo_1);
-  relay_photo_2 = controlLighting(target_photo_2, current_photo_2);
-
-  // Set Relays
   setRelay(PIN_D_RELAY_SMC_1, relay_smc_1); // Solenoid A
   setRelay(PIN_D_RELAY_SMC_2, relay_smc_2); // Solenoid B
   setRelay(PIN_D_RELAY_SMC_3, relay_smc_3); // Solenoid C
   setRelay(PIN_D_RELAY_SMC_4, relay_smc_4); // Solenoid D
-  setRelay(PIN_D_RELAY_PHOTO_1, relay_photo_1); // Light A
-  setRelay(PIN_D_RELAY_PHOTO_2, relay_photo_1); // Light B
+  
+  // Control Inter-canopy Lighting
+  setRelay(PIN_D_RELAY_LED, relay_led);
 
   // Transmit
-  JsonObject& dict_tx = json_tx.createObject();
-  dict_tx["smc1"] = current_smc_1;
-  dict_tx["smc2"] = current_smc_2;
-  dict_tx["smc3"] = current_smc_3;
-  dict_tx["smc4"] = current_smc_4;
-  dict_tx["photo1"] = current_photo_1;
-  dict_tx["photo2"] = current_photo_2;
-  dict_tx.printTo(data_buffer, sizeof(data_buffer));
-  sprintf(tx_buffer, "{\"data\":%s,\"targets\":%s,\"chksum\":%d}", data_buffer, targets_buffer, checksum(data_buffer));
-  Serial.println(tx_buffer);
+  dict["s1"] = current_smc_1;
+  dict["s2"] = current_smc_2;
+  dict["s3"] = current_smc_3;
+  dict["s4"] = current_smc_4;
+  dict["p1"] = current_photo_1;
+  dict["p2"] = current_photo_2;
+  dict.printTo(data_buffer, sizeof(data_buffer));
+  sprintf(ser_buffer, "{\"data\":%s,\"targets\":%s,\"chksum\":%d}", data_buffer, targets_buffer, checksum(data_buffer));
+  Serial.println(ser_buffer);
 }
 
 /* --- Functions --- */
@@ -262,16 +253,6 @@ void setRelay(int pin, bool state) {
 
 // Function to determine if irrigation solenoid should be engaged/disengaged
 bool controlMoisture(int target, int current) {
-  if (target > current) {
-    return true;
-  }
-  else {
-    return false;
-  }
-}
-
-// Function to determine if lighting should be engaged/disengaged
-bool controlLighting(int target, int current) {
   if (target > current) {
     return true;
   }

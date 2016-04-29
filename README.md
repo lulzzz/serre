@@ -5,6 +5,10 @@
 * Graph recent data from a node
 * 
 
+
+## Notes
+* default value should be zero
+
 ## References
 1. http://flask.pocoo.org/docs/0.10/deploying/mod_wsgi/
 2. https://www.digitalocean.com/community/tutorials/how-to-deploy-a-flask-application-on-an-ubuntu-vps
