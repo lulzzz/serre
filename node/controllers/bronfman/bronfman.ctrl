@@ -1,13 +1,14 @@
 {
  "baud" : 9600,
- "device" : "/dev/ttyACM0",
+ "device" : "/dev/ttyACM1",
  "lights" : "Lamp",
+ "lights_device" : "/dev/ttyUSB0",
  "checksum" : true,
  "data" : {
     "l" : ["IN_RANGE", "time", "lights_on", "lights_off"],
-    "s1" : ["SETPOINT", "time", "soil_1"],
-    "s2" : ["SETPOINT", "time", "soil_2"],
-    "s3" : ["SETPOINT", "time", "soil_3"],
-    "s4" : ["SETPOINT", "time", "soil_4"]
+    "s1" : ["SETPOINT", "soil_1"],
+    "s2" : ["SETPOINT", "soil_2"],
+    "s3" : ["SETPOINT", "soil_3"],
+    "s4" : ["SETPOINT", "soil_4"]
  }
 }

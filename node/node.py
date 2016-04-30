@@ -40,7 +40,9 @@ class Node:
             try:
                 d = self.controller.parse() # Grab the latest response from the controller
                 if d is None:
-                    print("Checksum failed when reading controller!")
+                    print("CHECKSUM: FAILED")
+                else:
+                    print("CHECKSUM: OK")
                 now = datetime.now()
                 datetimestamp = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S") # grab the current time-stamp for the sample
                 d['time'] = datetimestamp
@@ -60,8 +62,6 @@ class Node:
             r = None
             d['uid'] = self.config['UID']
             d['node_type'] = self.config['CTRL_CONF']
-            print 'PUSH = ',
-            print(json.dumps(d, indent=4, sort_keys=True))
             addr = self.config['SERVER_ADDR']
             r = requests.post(addr, json=d)
             return (r.status_code, r.json())
@@ -96,68 +96,66 @@ class Node:
                 self.gui.start()   
         time.sleep(1) #!TODO wait for controller to connect
         initial_params = self.controller.set_params(self.gui.settings) #!TODO
+        gui_targets = None
+        current_params = None
         print initial_params 
         try:
             while ((len(self.remote_queue) < error_limit) or (error_limit is None)) and self.threads_active:
-                time.sleep(1 / float(freq)) # slow down everyone, we're moving too fast
                 
+                # Wait for next event
+                time.sleep(1 / float(freq)) # slow down everyone, we're moving too fast
+
                 # Handle GUI
                 # Retrieve local changes to targets (overrides remote)
                 if (self.gui is not None) and self.gui.active_changes:
-                    print "------------------------------------"
                     gui_targets = self.gui.get_new_targets() #!TODO Resolve multiple sources for setting targets, GUI should override
-                    print gui_targets
-                    updated_params = self.controller.set_params(gui_targets)
-                    print updated_params
+                    current_params = self.controller.set_params(gui_targets)
+                    print("GUI_TARGETS: %s" % gui_targets)
+                    print("CURRENT_PARAMS: %s" % current_params)
+
                 # Handle controller queue
-                n = len(self.controller_queue)
-                if n > 0:
-                    print "------------------------------------"
+                num_samples = len(self.controller_queue)
+                if num_samples > 0:
+                    print("LOCAL_QUEUE: %d" %  num_samples)
                     try:
-                        data = self.controller_queue.pop()
-                        print 'CONTROLLER = ',
-                        print json.dumps(data, indent=4, sort_keys=True)
+                        sample = self.controller_queue.pop()
+                        print("SAMPLE: %s" % str(sample))
                         for k in self.controller.rules.iterkeys():
                             pass #!TODO Maybe use the controller rules for the filering
                         while len(self.controller_queue) > queue_limit:
                             self.controller_queue.pop(0) # grab from out-queue
-                        response = self.push_to_remote(data) # SEND TO REMOTE
+                        response = self.push_to_remote(sample) # SEND TO REMOTE
                         if response is not None:
                             self.remote_queue.append(response)
                     except Exception as e:
                         print str(e)
                 else:
                     data = {}
-                    
+
                 # Handled accrued responses/errors
                 num_responses = len(self.remote_queue)
                 if num_responses > 0:
                     for resp in self.remote_queue:
+                        print("REMOTE_QUEUE: %d" % num_responses)
+                        print("RESPONSE: %s" % str(resp))
                         # ERROR CODES
                         response_code = resp[0]
                         if response_code == 200:
-                            print 'RESPONSE = ',
-                            print json.dumps(resp[1], indent=4, sort_keys=True)
                             target_values = resp[1]['targets']
                             if target_values is not None:
                                 self.controller.set_params(target_values) # send target values within response to controller
                                 self.controller_queue = []
                                 self.gui.settings.update(target_values) #!TODO Dangerous way to update GUI from remote
                             self.remote_queue.pop()
-                        if response_code == 400:
-                            print "WARN" + "400"     
+                        if response_code == 400: 
                             self.remote_queue.pop() #!TODO bad connection!
                         if response_code == 500:
-                            print "WARN" + "500"                            
                             self.remote_queue.pop() #!TODO server there, but uncooperative!
                         if response_code is None:
-                            print "WARN" + "???"     
                             self.remote_queue.pop()
                         else:
                             pass #!TODO Unknown errors!
-                    # Summary
-                    if data != {}:
-                        print "Queue: %d, Response: %s, Data: %s" % (n, str(resp), str(data['data']))
+
             else:
                 print self.remote_queue #!TODO
         except KeyboardInterrupt:

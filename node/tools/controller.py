@@ -19,7 +19,7 @@ class Controller:
     parse()
     reset()
     """
-    def __init__(self, rules='v1'):
+    def __init__(self, rules='v1', timeout=5):
         """
         rules : The JSON-like .ctrl file for I/O rules
         """
@@ -42,9 +42,10 @@ class Controller:
             raise e
 
         ## Attempt to grab port
-        self.port = serial.Serial(self.device, self.baud)
+        self.port = serial.Serial(self.device, self.baud, timeout=timeout)
         self.port_is_readable = True
         self.port_is_writable = True
+
     def byteify(self, input):
         if isinstance(input, dict):
             return {self.byteify(key) : self.byteify(value) for key,value in input.iteritems()}
@@ -54,19 +55,20 @@ class Controller:
             return input.encode('utf-8')
         else:
             return input
+
     def parse(self, interval=1.0, chars=256, force_read=False): 
         try:
             s = self.port.readline() #!TODO Need to handle very highspeed controllers, i.e. backlog
-            print s #!DEBUG
+            print("SERIAL_RAW: %s" % s.strip('\n')) #!DEBUG
             d = json.loads(s) # parse as JSON
             self.port_is_readable = True
-            if self.checksum(d): # Checksum of parsed dictionary
-                return d
+            if self.checksum(d): # run checksum of parsed dictionary
+                return d # return data if checksum ok
             else:
-                return None
+                return None # return None if checksum failed
         except Exception as e:
-            print str(e)
             return None
+
     def set_params(self, params):
         """
         Set the target values of the controller
@@ -98,10 +100,12 @@ class Controller:
                 print str(e)
 
         # Send parameters to controller
+        print("TARGETS: %s" % str(targets))
         s = json.dumps(targets)
         s.replace(' ', '') # remove whitespace for serial transmission
         self.port.write(s)
         return s
+
     def checksum(self, d, mod=256):
         b = d['chksum']
         chksum = 0
