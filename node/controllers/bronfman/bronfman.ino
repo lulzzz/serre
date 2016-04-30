@@ -1,18 +1,20 @@
 /*
-  Hydroponics Controller - Bronfman
- */
+  Hydroponics Controller - Bronfman 
+*/
+  
 
 /* --- Libraries --- */
 #include <ArduinoJson.h>
+#include <RunningMedian.h>
 
 /* --- Prototypes --- */
-int FloatAIntEtArondie(float valeur);
+int roundFloat(float);
 int readAverage(const int, const int, const int);
 float toVoltage(const int, const int, const int);
-int readAverageLumiere (const int, const int);
-int getVolumetricMoistureContent (const int, const int);
-void setRelay(int, boolean);
-boolean controlMoisture(int, int);
+int getLuminosity(const int, const int);
+int getMoistureContent (const int, const int);
+void setRelay(const int, const boolean);
+boolean controlMoisture(const int, const int);
 int checksum(char*);
 
 /* --- Constants --- */
@@ -153,12 +155,12 @@ void loop() {
   }
 
   // Read Sensors
-  current_smc_1 = getVolumetricMoistureContent(PIN_D_SENSOR_SMC_1, PIN_A_SENSOR_SMC_1);
-  current_smc_2 = getVolumetricMoistureContent(PIN_D_SENSOR_SMC_2, PIN_A_SENSOR_SMC_2);
-  current_smc_3 = getVolumetricMoistureContent(PIN_D_SENSOR_SMC_3, PIN_A_SENSOR_SMC_3);
-  current_smc_4 = toMoistureContent(PIN_D_SENSOR_SMC_4, PIN_A_SENSOR_SMC_4);
-  current_photo_1 = toOhms(PIN_D_SENSOR_PHOTO_1, PIN_A_SENSOR_PHOTO_1);
-  current_photo_2 = toOhms(PIN_D_SENSOR_PHOTO_2, PIN_A_SENSOR_PHOTO_2);
+  current_smc_1 = getMoistureContent(PIN_D_SENSOR_SMC_1, PIN_A_SENSOR_SMC_1);
+  current_smc_2 = getMoistureContent(PIN_D_SENSOR_SMC_2, PIN_A_SENSOR_SMC_2);
+  current_smc_3 = getMoistureContent(PIN_D_SENSOR_SMC_3, PIN_A_SENSOR_SMC_3);
+  current_smc_4 = getMoistureContent(PIN_D_SENSOR_SMC_4, PIN_A_SENSOR_SMC_4);
+  current_photo_1 = getLuminosity(PIN_D_SENSOR_PHOTO_1, PIN_A_SENSOR_PHOTO_1);
+  current_photo_2 = getLuminosity(PIN_D_SENSOR_PHOTO_2, PIN_A_SENSOR_PHOTO_2);
 
   // Control Irritation
   relay_smc_1 = controlMoisture(target_smc_1, current_smc_1);
@@ -198,39 +200,37 @@ int roundFloat(float value) {
 }
 
 // Read Pin Value
-int readAverage(const int PIN_WRITE, const int PIN_READ, const int NUM_SAMPLES) {
-  const int DELAY_MS = 100;
+int readAverage(const int pin_write, const int pin_read, const int num_samples) {
+  const int delay_millis = 100;
   int sum = 0;
-  for (int i = 0; i < NUM_SAMPLES; i++) {
-    digitalWrite(PIN_WRITE, HIGH);
-    delay(DELAY_MS);
-    sum += analogRead(PIN_READ);
-    digitalWrite(PIN_WRITE, LOW);
+  for (int i = 0; i < num_samples; i++) {
+    digitalWrite(pin_write, HIGH);
+    delay(delay_millis);
+    sum += analogRead(pin_read);
+    digitalWrite(pin_write, LOW);
   }
-  return sum / NUM_SAMPLES;
+  return sum / num_samples;
 }
 
 // Convert to Voltage
-float toVoltage(const int PIN_WRITE, const int PIN_READ, const int NUM_SAMPLES) {
-  return readAverage(PIN_WRITE, PIN_READ, NUM_SAMPLES) * (5.0 / 1023.0);
+float toVoltage(const int pin_write, const int pin_read, const int num_samples) {
+  return readAverage(pin_write, pin_read, num_samples) * (5.0 / 1023.0);
 }
 
 // Return Ohms
-int toOhms (const int PIN_WRITE, const int PIN_READ) {
-  const int NUM_SAMPLES = 4;
-  const int VIN = 5; // Arduino Voltage
-  const float RESISTANCE = 975; // Ohms
-  return roundFloat(RESISTANCE / ((VIN / toVoltage(PIN_WRITE, PIN_READ, NUM_SAMPLES)) - 1));
+int getLuminosity(const int pin_write, const int pin_read) {
+  const int num_samples = 5;
+  const int reference_voltage = 5; // Arduino Voltage
+  const float resistance = 975; // Ohms
+  return roundFloat(resistance / ((reference_voltage / toVoltage(pin_write, pin_read, num_samples)) - 1));
 }
 
-// capteur vh400
-// retourne la teneur en eau volum�trique(Volumetric Water Content) en %
-// Equation fond�e sur les calculs de la compagnie qui produit le capteur d'humidit
+// Calculate Volumetric Moisture Content (%) for VH400 Sensor
 // http://vegetronix.com/Products/VH400/VH400-Piecewise-Curve.phtml
-int toMoistureContent (const int PIN_WRITE, const int PIN_READ) {
-  const int NUM_SAMPLES = 4;
+int getMoistureContent (const int pin_write, const int pin_read) {
+  const int num_samples = 5;
   float moisture = 0.0;
-  float voltage = toVoltage(PIN_WRITE, PIN_READ, NUM_SAMPLES);
+  float voltage = toVoltage(pin_write, pin_read, num_samples);
   if (voltage < 1.1) {
     moisture = 10.0 * voltage - 1.0;
   }
@@ -247,11 +247,11 @@ int toMoistureContent (const int PIN_WRITE, const int PIN_READ) {
   if (voltage >= 2.2) {
     moisture = 26.32 * voltage - 7.89;
   }
-  return MoistureContent;
+  return moisture;
 }
 
 // Set Relay
-void setRelay(constint pin, boolean state) {
+void setRelay(const int pin, const boolean state) {
   delay(25);
   if (state) {
     digitalWrite(pin, LOW);
@@ -273,7 +273,7 @@ boolean controlMoisture(int target, int current) {
 
 int checksum(char* buf) {
   int sum = 0;
-  for (int i = 0; i < DATA_LENGTH; i++) {
+  for (int i = 0; i < sizeof(buf); i++) {
     sum = sum + buf[i];
   }
   return sum % 256;
