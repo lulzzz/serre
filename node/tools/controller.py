@@ -42,6 +42,7 @@ class Controller:
             self.lights_model = self.rules['lights_model']
             self.lights_device = self.rules['lights_device']
             self.lights_baud = self.rules['lights_baud']
+            self.lights_rules = self.rules['lights_rules']
 
         except Exception as e:
             raise e
@@ -49,8 +50,6 @@ class Controller:
         ## Connect to MCU
         try:
             self.mcu_port = serial.Serial(self.mcu_device, self.mcu_baud, timeout=timeout)
-            self.mcu_port_is_readable = True
-            self.mcu_port_is_writable = True
         except Exception as e:
             print str(e)
             self.mcu_port = None
@@ -77,7 +76,6 @@ class Controller:
             s = self.mcu_port.readline() #!TODO Need to handle very highspeed controllers, i.e. backlog
             print("SERIAL_READ: %s" % s.strip('\n')) #!DEBUG
             d = json.loads(s) # parse as JSON
-            self.mcu_port_is_readable = True
             if self.checksum(d): # run checksum of parsed dictionary
                 return d # return data if checksum ok
             else:
@@ -98,17 +96,19 @@ class Controller:
         now = datetime.now()
         hours_since_midnight = (now - now.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds() / 3600.0
         params['time'] = hours_since_midnight
-        d = {k.encode('ascii'): v for (k, v) in params.items()}
+        params = {k.encode('ascii'): v for (k, v) in params.items()} # ensure dict is in ASCII encoding
+        
+        # Set output based on MCU rules
         targets = dict()
         for k,r in self.mcu_rules.iteritems():
             try:
                 # Check each rules "type", and then set the target value based on the input values
                 if r[0] == "SETPOINT": 
-                    targets[k] = int(d[r[1]])
+                    targets[k] = int(params[r[1]])
                 if r[0] == "IN_RANGE": 
-                    limit_max = d[r[3]]
-                    limit_min = d[r[2]]
-                    metric = d[r[1]]
+                    limit_max = params[r[3]]
+                    limit_min = params[r[2]]
+                    metric = params[r[1]]
                     if (metric < limit_max) and (metric > limit_min):
                         targets[k] = 1
                     else:
@@ -122,10 +122,30 @@ class Controller:
         s.replace(' ', '') # remove whitespace for serial transmission
         self.mcu_port.write(s)
 
+        # Set output based on lights rules
+        for r in self.lights_rules:
+            try:
+                # Check each rules "type", and then set the target value based on the input values
+                if r[0] == "LESS_THAN": 
+                    if params[r[1]] < params[r[2]]:
+                        percent = params[r[3]]
+                    else:
+                        percent = 0
+                if r[0] == "IN_RANGE": 
+                    limit_max = params[r[3]]
+                    limit_min = params[r[2]]
+                    metric = params[r[1]]
+                    if (metric < limit_max) and (metric > limit_min):
+                        percent = params[r[4]]
+                    else:
+                        percent = 0
+            except Exception as e:
+                print str(e)
+
         # Send parameters to lights
-        print("LIGHT TARGETS: %s" % str(targets))
+        print("LIGHT TARGETS: %s" % str(params))
         for c in [1,2,3,4]:
-            self.lights_port.set_channel(c, 0)
+            self.lights_port.set_channel(c, percent)
         return s
 
     def checksum(self, d, mod=256):

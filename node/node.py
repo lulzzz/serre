@@ -93,11 +93,10 @@ class Node:
             # If GUI started successfully, run as thread
             if self.gui:
                 self.gui.start()   
-        time.sleep(1) #!TODO wait for controller to connect
+        time.sleep(1)
         initial_params = self.controller.set_params(self.gui.settings) #!TODO
         gui_targets = None
         current_params = None
-        print initial_params 
         try:
             while ((len(self.remote_queue) < error_limit) or (error_limit is None)) and self.threads_active:
                 
@@ -111,7 +110,7 @@ class Node:
                     current_params = self.controller.set_params(gui_targets)
                     print("GUI_TARGETS: %s" % gui_targets)
                     print("CURRENT_PARAMS: %s" % current_params)
-
+                
                 # Handle controller queue
                 num_samples = len(self.controller_queue)
                 if num_samples > 0:

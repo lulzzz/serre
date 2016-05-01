@@ -154,20 +154,21 @@ class GUI_bronfman(threading.Thread):
         # Intercanopy
         self.lights_on = tk.IntVar()
         self.scale_lights_on = tk.Scale(self.root, from_=0.0, to=24.0, length=200, orient=tk.HORIZONTAL, variable = self.lights_on)
-        self.scale_lights_on.grid(column=0, row=4, ipady=20)
+        self.scale_lights_on.grid(column=0, row=3, ipady=20)
         self.scale_lights_on.set(self.settings['lights_on'])
         self.lights_off = tk.IntVar()
         self.scale_lights_off = tk.Scale(self.root, from_=0.0, to=24.0, length=200, orient=tk.HORIZONTAL, variable = self.lights_off)
-        self.scale_lights_off.grid(column=0, row=6, ipady=20)
+        self.scale_lights_off.grid(column=0, row=5, ipady=20)
         self.scale_lights_off.set(self.settings['lights_off'])
         self.label_lights_on = tk.Label(self.root, text='Lumiere ON (hr)', font=self.font)
-        self.label_lights_on.grid(column=0, row=3)
+        self.label_lights_on.grid(column=0, row=2)
         self.label_lights_off = tk.Label(self.root, text='Lumiere OFF (hr)', font=self.font)
-        self.label_lights_off.grid(column=0, row=5)
+        self.label_lights_off.grid(column=0, row=4)
         
         # Overhead Light Trigger
-        self.label_ambient_light = tk.Label(self.root, text='Lumiere Ambient (Min.)', font=self.font)
-        self.label_ambient_light.grid(column=0, row=7)
+        self.ambient_light_template = 'Limite Lumiere Active: %d%%'
+        self.label_ambient_min = tk.Label(self.root, text=self.ambient_light_template, font=self.font)
+        self.label_ambient_min.grid(column=0, row=7)
         self.ambient_min = tk.IntVar()
         self.scale_ambient_min = tk.Scale(self.root, from_=0, to=100, length=200, orient=tk.HORIZONTAL, variable = self.ambient_min)
         self.scale_ambient_min.grid(column=0, row=8, ipady=20)
@@ -177,49 +178,52 @@ class GUI_bronfman(threading.Thread):
         # Soil MC #1
         self.smc1_template = 'Bed #1, Nord: %d%%'
         self.label_smc1 = tk.Label(self.root, text=self.smc1_template, font=self.font)
-        self.label_smc1.grid(column=1, row=3)
+        self.label_smc1.grid(column=1, row=2)
         self.smc1 = tk.IntVar()
         self.scale_smc1 = tk.Scale(self.root, from_=0, to=100, length=200, orient=tk.HORIZONTAL, variable = self.smc1)
-        self.scale_smc1.grid(column=1, row=4, ipady=20)
+        self.scale_smc1.grid(column=1, row=3, ipady=20)
         self.scale_smc1.set(self.settings['soil_1'])
 
         # Soil MC #2
         self.smc2_template = 'Bed #1, Sud: %d%%'
         self.label_smc2 = tk.Label(self.root, text=self.smc2_template, font=self.font)
-        self.label_smc2.grid(column=1, row=5)
+        self.label_smc2.grid(column=1, row=4)
         self.smc2 = tk.IntVar()
         self.scale_smc2 = tk.Scale(self.root, from_=0, to=100, length=200, orient=tk.HORIZONTAL, variable = self.smc2)
-        self.scale_smc2.grid(column=1, row=6, ipady=20)
+        self.scale_smc2.grid(column=1, row=5, ipady=20)
         self.scale_smc2.set(self.settings['soil_2'])
 
         # Soil MC #3
         self.smc3_template = 'Bed #2, Nord: %d%%'
         self.label_smc3 = tk.Label(self.root, text=self.smc3_template, font=self.font)
-        self.label_smc3.grid(column=2, row=3)
+        self.label_smc3.grid(column=2, row=2)
         self.smc3 = tk.IntVar()
         self.scale_smc3 = tk.Scale(self.root, from_=0, to=100, length=200, orient=tk.HORIZONTAL, variable = self.smc3)
-        self.scale_smc3.grid(column=2, row=4, ipady=20)
+        self.scale_smc3.grid(column=2, row=3, ipady=20)
         self.scale_smc3.set(self.settings['soil_3'])
         
         # Soil MC #4
-        self.smc4_template = 'Bed #1, Sud: %d%%'
+        self.smc4_template = 'Bed #2, Sud: %d%%'
         self.label_smc4 = tk.Label(self.root, text=self.smc4_template, font=self.font)
-        self.label_smc4.grid(column=2, row=5)
+        self.label_smc4.grid(column=2, row=4)
         self.smc4 = tk.IntVar()
         self.scale_smc4 = tk.Scale(self.root, from_=0, to=100, length=200, orient=tk.HORIZONTAL, variable = self.smc4)
-        self.scale_smc4.grid(column=2, row=6, ipady=20)
+        self.scale_smc4.grid(column=2, row=5, ipady=20)
         self.scale_smc4.set(self.settings['soil_4'])
 
-        # Set Button
-        self.button_set = tk.Button(self.root, text="SET CONFIG", command=self.set_config, bg = "green", padx=20, pady=20)
-        self.button_set.grid(column=1, row=7)
-        self.button_set = tk.Button(self.root, text="UPDATE VALUES", command=self.update_values, bg = "green", padx=20, pady=20)
-        self.button_set.grid(column=1, row=8)
+        # Overhead Light Level
+        self.overhead_level_template = 'Overhead Lumiere: %d%%'
+        self.label_overhead_level = tk.Label(self.root, text=self.overhead_level_template, font=self.font)
+        self.label_overhead_level.grid(column=1, row=7)
+        self.overhead_level = tk.IntVar()
+        self.scale_overhead_level = tk.Scale(self.root, from_=0, to=100, length=200, orient=tk.HORIZONTAL, variable = self.overhead_level)
+        self.scale_overhead_level.grid(column=1, row=8, ipady=20)
+        self.scale_overhead_level.set(self.settings['overhead_level'])
 
         # Kill
-        self.button_kill = tk.Button(self.root, text="KILL LIGHTS", command=self.set_config, bg = "orange", padx=20, pady=20)
+        self.button_kill = tk.Button(self.root, text="Update", command=self.set_config, bg = "green", padx=20, pady=20)
         self.button_kill.grid(column=2, row=7)
-        self.button_kill = tk.Button(self.root, text="KILL LIGHTS", command=self.set_config, bg = "orange", padx=20, pady=20)
+        self.button_kill = tk.Button(self.root, text="All Off", command=self.kill_all, bg = "red", padx=20, pady=20)
         self.button_kill.grid(column=2, row=8)
 
         # Reset to saved values and start engine
@@ -237,6 +241,9 @@ class GUI_bronfman(threading.Thread):
         self.settings['soil_2'] = self.smc2.get()
         self.settings['soil_3'] = self.smc3.get()
         self.settings['soil_4'] = self.smc4.get()
+        self.settings['overhead_level'] = self.overhead_level.get()
+
+        # Save settings to config file in case of reboot / power-loss
         settings_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), settings)
         if os.path.exists(settings_path):
             with open(settings_path, 'w') as jsonfile:
@@ -254,10 +261,29 @@ class GUI_bronfman(threading.Thread):
         """
         Overrides the dictionary object for settings provided by the GUI
         """
+
+        # External (from MCU)
+        self.settings.update(values)
         self.label_smc1.configure(text=self.smc1_template % values['s1'], font=self.font)
-        self.label_smc2.configure(text=self.smc1_template % values['s1'], font=self.font)
-        self.label_smc3.configure(text=self.smc1_template % values['s1'], font=self.font)
-        self.label_smc4.configure(text=self.smc1_template % values['s1'], font=self.font)
+        self.label_smc2.configure(text=self.smc2_template % values['s2'], font=self.font)
+        self.label_smc3.configure(text=self.smc3_template % values['s3'], font=self.font)
+        self.label_smc4.configure(text=self.smc4_template % values['s4'], font=self.font)
+        self.label_ambient_min.configure(text=self.ambient_light_template % values['p'], font=self.font)
+
+        # Internal (from GUI)
+        self.label_overhead_level.configure(text=self.overhead_level_template % self.overhead_level.get(), font=self.font)
+
+    def kill_all(self):
+        """
+        Disable all valves and lights
+        """
+        self.settings['lights_on'] = 12
+        self.settings['lights_off'] = 12
+        self.settings['overhead_level'] = 0
+        self.settings['soil_1'] = 0
+        self.settings['soil_2'] = 0
+        self.settings['soil_3'] = 0
+        self.settings['soil_4'] = 0
 
     def close(self):
         """
