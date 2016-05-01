@@ -22,8 +22,10 @@ class GUI_v1(threading.Thread):
         threading.Thread.__init__(self)
     def run(self):
         self.root = tk.Tk()
-        self.root.title("Hydroponics Controller (vers. 1)")
-        self.root.geometry("640x480")
+        self.root.title("Hydroponics Controller (V1)")
+        w, h = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
+        self.root.geometry("%dx%d+0+0" % (w,h))
+        self.root.overrideredirect(1)
         [self.root.rowconfigure(i,weight=1) for i in range(12)]
         [self.root.columnconfigure(i,weight=1) for i in range(3)]
         
@@ -79,7 +81,10 @@ class GUI_v1(threading.Thread):
 
         # Reset to saved values and start engine
         self.set_config()
+        self.root.focus_set() # move focus to widget
+        self.root.bind("<Escape>", lambda e: e.widget.quit())
         self.root.mainloop()
+
     def set_config(self, settings='settings.json'): # called from button_set object
         """
         Updates the dictionary object for settings provided by the GUI
@@ -145,8 +150,10 @@ class GUI_bronfman(threading.Thread):
     def run(self):
         print self.settings
         self.root = tk.Tk()
-        self.root.title("Hydroponics Controller (vers. 1)")
-        self.root.geometry("640x480")
+        self.root.title("Hydroponics Controller (Bronfman)")
+        w, h = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
+        self.root.geometry("%dx%d+0+0" % (w,h))
+        self.root.overrideredirect(1)
         [self.root.rowconfigure(i,weight=1) for i in range(10)]
         [self.root.columnconfigure(i,weight=1) for i in range(3)]
         
@@ -226,8 +233,10 @@ class GUI_bronfman(threading.Thread):
         self.button_kill = tk.Button(self.root, text="All Off", command=self.kill_all, bg = "red", padx=20, pady=20)
         self.button_kill.grid(column=2, row=8)
 
-        # Reset to saved values and start engine
+        # Focus, fullscreen, set to saved values, and start application
+        self.root.focus_set() # move focus to widget
         self.set_config()
+        self.root.bind("<Escape>", lambda e: e.widget.quit())
         self.root.mainloop()
 
     def set_config(self, settings='settings.json'): # called from button_set object
@@ -289,4 +298,5 @@ class GUI_bronfman(threading.Thread):
         """
         Safely close the TK GUI
         """
+        print("CAUGHT CLOSE SIGNAL")
         self.root.destroy()
