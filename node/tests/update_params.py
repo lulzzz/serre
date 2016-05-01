@@ -1,8 +1,17 @@
+import serial
+import sys
+import json
+
 timeout=5
+baud = 9600
+device = sys.argv[1]
+
 port = serial.Serial(device, baud, timeout=timeout)
-port.readline() #!TODO Need to handle very highspeed controllers, i.e. backlog
-s = json.dumps(targets)
-s.replace(' ', '') # remove whitespace for serial transmission
-port.write(s)
-return s
+while True:
+    try:
+         s = port.readline() #!TODO Need to handle very highspeed controllers, i.e. backlog
+         d = json.loads(s)  
+         print d
+    except KeyboardInterrupt: break
+    except Exception as e: print str(e)
 

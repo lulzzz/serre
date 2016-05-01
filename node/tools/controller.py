@@ -51,15 +51,16 @@ class Controller:
         try:
             self.mcu_port = serial.Serial(self.mcu_device, self.mcu_baud, timeout=timeout)
         except Exception as e:
-            print str(e)
             self.mcu_port = None
+            raise Exception("Failed to attach MCU!")
 
         ## Connect to Lights
         try:
             self.lights_port = Lamp(self.lights_device, self.lights_baud, timeout=timeout)
         except Exception as e:
-            print str(e)
             self.lights_port = None
+            raise Exception("Failed to attach Lights!")
+            
 
     def byteify(self, input):
         if isinstance(input, dict):
@@ -113,8 +114,10 @@ class Controller:
                         targets[k] = 1
                     else:
                         targets[k] = 0
-            except Exception as e:
-                print str(e)
+                else:
+                    raise Exception("Unrecognized rule for MCU! Check .ctrl file")
+            except:
+                pass
 
         # Send parameters to MCU
         print("MCU TARGETS: %s" % str(targets))
@@ -123,27 +126,25 @@ class Controller:
         self.mcu_port.write(s)
 
         # Set output based on lights rules
-        for r in self.lights_rules:
-            try:
-                # Check each rules "type", and then set the target value based on the input values
-                if r[0] == "LESS_THAN": 
-                    if params[r[1]] < params[r[2]]:
-                        percent = params[r[3]]
-                    else:
-                        percent = 0
-                if r[0] == "IN_RANGE": 
-                    limit_max = params[r[3]]
-                    limit_min = params[r[2]]
-                    metric = params[r[1]]
-                    if (metric < limit_max) and (metric > limit_min):
-                        percent = params[r[4]]
-                    else:
-                        percent = 0
-            except Exception as e:
-                print str(e)
+        # This rules are ANDs, so if any of them are zero, they default to zero
+        percent = 0 # default to 0 just in case
+        try:
+            # Check each rules "type", and then set the target value based on the input values
+            limit_min = params[self.lights_rules['on']]
+            limit_max = params[self.lights_rules['off']]
+            metric = params[self.lights_rules['time']]
+            threshold = params[self.lights_rules['threshold']]
+            reference = params[self.lights_rules['reference']]
+            output = params[self.lights_rules['output']]
+            if (metric < limit_max) and (metric > limit_min):
+                if reference < threshold:
+                    percent = output
+            print limit_min, limit_max, reference, threshold, output
+        except:
+            raise Exception("Unable to determine rule for lights! Check .ctrl file")
 
         # Send parameters to lights
-        print("LIGHT TARGETS: %s" % str(params))
+        print("OVERHEAD LEVEL: %s" % str(percent))
         for c in [1,2,3,4]:
             self.lights_port.set_channel(c, percent)
         return s
@@ -180,7 +181,6 @@ class Lamp:
         Set a particular channel of the lamp module to a percent level
         Channels
         """
-        print("LIGHT%d: %d%%" % (channel, percent))
         if percent > 100:
             percent = 100
         elif percent < 0:

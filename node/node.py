@@ -18,8 +18,9 @@ This class is responsible for acting as the HTTP interface between the remote ma
 """
 class Node:
 
-    def __init__(self, config=None):
+    def __init__(self, config=None, log='/home/trevor/log.txt'):
         self.config = config
+        self.log = open(log, 'w')
         self.gui = None
         self.gui_exists = False
         self.threads_active = True
@@ -27,6 +28,10 @@ class Node:
         self.controller = rhumController.Controller(rules=self.config['CTRL_CONF'])
         self.controller_queue = [] # the outgoing queue (start empty)
         threading.Thread(target=self.watchdog, args=(), kwargs={}).start()
+    
+    def log_msg(self, msg):
+        print msg
+        self.log.write(msg + '\n')
 
     def watchdog(self):
         """
@@ -39,15 +44,16 @@ class Node:
             try:
                 d = self.controller.parse() # Grab the latest response from the controller
                 if d is None:
-                    print("CHECKSUM: FAILED")
+                    self.log_msg("CHECKSUM: FAILED")
                 else:
-                    print("CHECKSUM: OK")
-                now = datetime.now()
-                datetimestamp = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S") # grab the current time-stamp for the sample
-                d['time'] = datetimestamp
-                self.controller_queue.append(d) # add the sample to the outgoing queue to be handled by the node
+                    self.log_msg("CHECKSUM: OK")
+                    now = datetime.now()
+                    datetimestamp = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S") # grab the current time-stamp for the sample
+                    d['time'] = datetimestamp
+                    self.controller_queue.append(d) # add the sample to the outgoing queue to be handled by the node
             except Exception as e:
-                print str(e)
+                self.log_msg(str(e))
+                raise e
 
     def push_to_remote(self, d):
         """
@@ -87,16 +93,16 @@ class Node:
             if self.config['CTRL_CONF'] == 'bronfman':
                 self.gui = rhumGUI.GUI_bronfman()
             else:
-                print("GUI not found for \"%s\" configuration." % (self.config['CTRL_CONF']))
+                self.log_msg("GUI not found for \"%s\" configuration." % (self.config['CTRL_CONF']))
                 self.threads_active = False
                 exit(0)
             # If GUI started successfully, run as thread
             if self.gui:
                 self.gui.start()   
-        time.sleep(1)
-        initial_params = self.controller.set_params(self.gui.settings) #!TODO
-        gui_targets = None
-        current_params = None
+
+        # Wait for values to get set
+        time.sleep(5)
+        
         try:
             while ((len(self.remote_queue) < error_limit) or (error_limit is None)) and self.threads_active:
                 
@@ -105,42 +111,49 @@ class Node:
 
                 # Handle GUI
                 # Retrieve local changes to targets (overrides remote)
-                if (self.gui is not None) and self.gui.active_changes:
-                    gui_targets = self.gui.get_new_targets() #!TODO Resolve multiple sources for setting targets, GUI should override
+                if (self.gui is not None):
+                    gui_targets = self.gui.get_values() #!TODO Resolve multiple sources for setting targets, GUI should override
                     current_params = self.controller.set_params(gui_targets)
-                    print("GUI_TARGETS: %s" % gui_targets)
-                    print("CURRENT_PARAMS: %s" % current_params)
                 
                 # Handle controller queue
+                while len(self.controller_queue) > queue_limit:
+                    self.controller_queue.pop(0) # grab from out-queue
                 num_samples = len(self.controller_queue)
                 if num_samples > 0:
-                    print("LOCAL_QUEUE: %d" %  num_samples)
+                    self.log_msg("MCU QUEUE LENGTH: %d" %  num_samples)
                     try:
                         sample = self.controller_queue.pop()
-                        if (self.gui is not None): self.gui.update_values(sample['data'])
-                        print("SAMPLE: %s" % str(sample))
-                        while len(self.controller_queue) > queue_limit:
-                            self.controller_queue.pop(0) # grab from out-queue
+                        self.log_msg("SAMPLE: %s" % str(sample))
                         response = self.push_to_remote(sample) # SEND TO REMOTE
+                        if (self.gui is not None):
+                            try:
+                                sample['data']
+                                self.gui.update_values(sample['data'])
+                            except:
+                                pass
                         if response is not None:
                             self.remote_queue.append(response)
                     except Exception as e:
-                        print str(e)
+                        self.log_msg(str(e))
+                        raise e
 
                 # Handled accrued responses/errors
                 num_responses = len(self.remote_queue)
                 if num_responses > 0:
                     for resp in self.remote_queue:
-                        print("REMOTE_QUEUE: %d" % num_responses)
-                        print("RESPONSE: %s" % str(resp))
+                        self.log_msg("REMOTE QUEUE LENGTH: %d" % num_responses)
+                        self.log_msg("RESPONSE: %s" % str(resp))
                         response_code = resp[0]
                         if response_code == 200:
+                            self.remote_queue.pop()
                             target_values = resp[1]['targets']
                             if target_values is not None:
-                                self.controller.set_params(target_values) # send target values within response to controller
+                                try:
+                                    self.controller.set_params(target_values) # send target values within response to controller
+                                    self.gui.settings.update(target_values) #!TODO Dangerous way to update GUI from remote
+                                except Exception as e:
+                                    self.log_msg(str(e))
                                 self.controller_queue = []
-                                self.gui.settings.update(target_values) #!TODO Dangerous way to update GUI from remote
-                            self.remote_queue.pop()
                         if response_code == 400: 
                             self.remote_queue.pop() #!TODO bad connection!
                         if response_code == 500:
@@ -151,11 +164,11 @@ class Node:
                             pass #!TODO Unknown errors!
 
         except KeyboardInterrupt:
-            print "\nexiting..."
+            self.log_msg("\nexiting...")
             self.threads_active = False
             exit(0)
         except Exception as e:
-            print str(e)
+            self.log_msg(str(e))
             self.threads_active = False
             exit(0)
     

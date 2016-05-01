@@ -135,23 +135,40 @@ class GUI_bronfman(threading.Thread):
     
     def __init__(self, settings='../settings.json'):
         self.active_changes = False
-        settings_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), settings)
-        if os.path.exists(settings_path):
-            with open(settings_path, 'r') as jsonfile:
+        self.settings_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), settings)
+        if os.path.exists(self.settings_path):
+            print "FOUND SETTINGS FILE"
+            with open(self.settings_path, 'r') as jsonfile:
                 self.settings = json.loads(jsonfile.read())  
         else:
             raise Exception("Failed to get settings!")
         self.active_changes = True
-        
+
+        # The named keys for all of the items in the GUI and 
+        setting_keys = [
+            "lights_off", 
+            "lights_on", 
+            "ambient_min",
+            "overhead_level",
+            "soil_1",
+            "soil_2",
+            "soil_3",
+            "soil_4",
+        ]
         self.settings = { str(key):value for key,value in self.settings.items() } # convert from unicode to ascii
+        for k in setting_keys:
+            try:
+                self.settings[k]
+            except:
+                self.settings[k] = 0
         threading.Thread.__init__(self)
         self.font = font="Arial 11 bold"
 
-    def run(self):
-        print self.settings
+    def run(self, w=640, h=480):
+        print("INITIAL_PARAMS: %s" % self.settings)
         self.root = tk.Tk()
         self.root.title("Hydroponics Controller (Bronfman)")
-        w, h = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
+        #w, h = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
         self.root.geometry("%dx%d+0+0" % (w,h))
         self.root.overrideredirect(1)
         [self.root.rowconfigure(i,weight=1) for i in range(10)]
@@ -234,12 +251,13 @@ class GUI_bronfman(threading.Thread):
         self.button_kill.grid(column=2, row=8)
 
         # Focus, fullscreen, set to saved values, and start application
+        self.update_values(None)
         self.root.focus_set() # move focus to widget
         self.set_config()
         self.root.bind("<Escape>", lambda e: e.widget.quit())
         self.root.mainloop()
 
-    def set_config(self, settings='settings.json'): # called from button_set object
+    def set_config(self): # called from button_set object
         """
         Updates the dictionary object for settings provided by the GUI
         """        
@@ -253,13 +271,12 @@ class GUI_bronfman(threading.Thread):
         self.settings['overhead_level'] = self.overhead_level.get()
 
         # Save settings to config file in case of reboot / power-loss
-        settings_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), settings)
-        if os.path.exists(settings_path):
-            with open(settings_path, 'w') as jsonfile:
-                jsonfile.write(json.dumps(self.settings, indent=4))
+        print "UPDATING SETTINGS FILE"
+        with open(self.settings_path, 'w') as jsonfile:
+            jsonfile.write(json.dumps(self.settings, indent=4))
         self.active_changes = True # (flag) changes are active!
 
-    def get_new_targets(self):
+    def get_values(self):
         """
         Returns the dictionary object for settings provided by the GUI
         """
@@ -270,17 +287,19 @@ class GUI_bronfman(threading.Thread):
         """
         Overrides the dictionary object for settings provided by the GUI
         """
+        if values is not None:
+            self.settings.update(values)
 
         # External (from MCU)
-        self.settings.update(values)
-        self.label_smc1.configure(text=self.smc1_template % values['s1'], font=self.font)
-        self.label_smc2.configure(text=self.smc2_template % values['s2'], font=self.font)
-        self.label_smc3.configure(text=self.smc3_template % values['s3'], font=self.font)
-        self.label_smc4.configure(text=self.smc4_template % values['s4'], font=self.font)
-        self.label_ambient_min.configure(text=self.ambient_light_template % values['p'], font=self.font)
+        self.label_smc1.configure(text=self.smc1_template % self.settings['s1'], font=self.font)
+        self.label_smc2.configure(text=self.smc2_template % self.settings['s2'], font=self.font)
+        self.label_smc3.configure(text=self.smc3_template % self.settings['s3'], font=self.font)
+        self.label_smc4.configure(text=self.smc4_template % self.settings['s4'], font=self.font)
+        self.label_ambient_min.configure(text=self.ambient_light_template % self.settings['p'], font=self.font)
 
         # Internal (from GUI)
         self.label_overhead_level.configure(text=self.overhead_level_template % self.overhead_level.get(), font=self.font)
+        self.active_changes = True # (flag) Once changes are retrieved, we assume that they will be sent to the controller
 
     def kill_all(self):
         """
@@ -293,6 +312,12 @@ class GUI_bronfman(threading.Thread):
         self.settings['soil_2'] = 0
         self.settings['soil_3'] = 0
         self.settings['soil_4'] = 0
+        self.scale_overhead_level.set(self.settings['overhead_level'])
+        self.scale_smc1.set(self.settings['soil_1'])
+        self.scale_smc2.set(self.settings['soil_2'])
+        self.scale_smc3.set(self.settings['soil_3'])
+        self.scale_smc4.set(self.settings['soil_4'])
+        self.active_changes = True # (flag) Once changes are retrieved, we assume that they will be sent to the controller
 
     def close(self):
         """
