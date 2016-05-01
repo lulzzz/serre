@@ -32,19 +32,35 @@ class Controller:
                 with open(configpath) as jsonfile:
                     self.rules = self.byteify(json.loads(jsonfile.read()))
             
-            # Check .ctrl integrity
-            self.check = self.rules['checksum']
-            self.data = self.rules['data']
-            self.device = self.rules['device']
-            self.baud = self.rules['baud']
-        
+            # Get MCU settings
+            self.mcu_checksum = self.rules['mcu_checksum']
+            self.mcu_device = self.rules['mcu_device']
+            self.mcu_baud = self.rules['mcu_baud']
+            self.mcu_rules = self.rules['mcu_rules']
+
+            # Get Lights settings
+            self.lights_model = self.rules['lights_model']
+            self.lights_device = self.rules['lights_device']
+            self.lights_baud = self.rules['lights_baud']
+
         except Exception as e:
             raise e
 
-        ## Attempt to grab port
-        self.port = serial.Serial(self.device, self.baud, timeout=timeout)
-        self.port_is_readable = True
-        self.port_is_writable = True
+        ## Connect to MCU
+        try:
+            self.mcu_port = serial.Serial(self.mcu_device, self.mcu_baud, timeout=timeout)
+            self.mcu_port_is_readable = True
+            self.mcu_port_is_writable = True
+        except Exception as e:
+            print str(e)
+            self.mcu_port = None
+
+        ## Connect to Lights
+        try:
+            self.lights_port = Lamp(self.lights_device, self.lights_baud, timeout=timeout)
+        except Exception as e:
+            print str(e)
+            self.lights_port = None
 
     def byteify(self, input):
         if isinstance(input, dict):
@@ -58,10 +74,10 @@ class Controller:
 
     def parse(self, interval=1.0, chars=256, force_read=False): 
         try:
-            s = self.port.readline() #!TODO Need to handle very highspeed controllers, i.e. backlog
-            print("SERIAL_RAW: %s" % s.strip('\n')) #!DEBUG
+            s = self.mcu_port.readline() #!TODO Need to handle very highspeed controllers, i.e. backlog
+            print("SERIAL_READ: %s" % s.strip('\n')) #!DEBUG
             d = json.loads(s) # parse as JSON
-            self.port_is_readable = True
+            self.mcu_port_is_readable = True
             if self.checksum(d): # run checksum of parsed dictionary
                 return d # return data if checksum ok
             else:
@@ -84,8 +100,9 @@ class Controller:
         params['time'] = hours_since_midnight
         d = {k.encode('ascii'): v for (k, v) in params.items()}
         targets = dict()
-        for k,r in self.rules['data'].iteritems():
+        for k,r in self.mcu_rules.iteritems():
             try:
+                # Check each rules "type", and then set the target value based on the input values
                 if r[0] == "SETPOINT": 
                     targets[k] = int(d[r[1]])
                 if r[0] == "IN_RANGE": 
@@ -99,20 +116,56 @@ class Controller:
             except Exception as e:
                 print str(e)
 
-        # Send parameters to controller
-        print("TARGETS: %s" % str(targets))
+        # Send parameters to MCU
+        print("MCU TARGETS: %s" % str(targets))
         s = json.dumps(targets)
         s.replace(' ', '') # remove whitespace for serial transmission
-        self.port.write(s)
+        self.mcu_port.write(s)
+
+        # Send parameters to lights
+        print("LIGHT TARGETS: %s" % str(targets))
+        for c in [1,2,3,4]:
+            self.lights_port.set_channel(c, 0)
         return s
 
     def checksum(self, d, mod=256):
-        b = d['chksum']
+        """
+        Calculate checksum
+        """
         chksum = 0
         s = str(d)
         s_clean = s.replace(' ', '')
         for i in s_clean:
             chksum += ord(i)
         return chksum % mod
+
     def reset(self):
         pass
+
+
+class Lamp:
+    """
+    Special Serial class
+    """
+
+    def __init__(self, device, baud, timeout="1"):
+        """
+        Initialize connection in Manual Mode
+        """
+        self.port = serial.Serial(device, baud, timeout=timeout)
+        self.manual_mode_command = "%d:%d s lamp.manual %d%%\r"
+
+    def set_channel(self, channel, percent, group=1):
+        """
+        Set a particular channel of the lamp module to a percent level
+        Channels
+        """
+        print("LIGHT%d: %d%%" % (channel, percent))
+        if percent > 100:
+            percent = 100
+        elif percent < 0:
+            percent = 0
+        if channel > 4 or channel < 1:
+            raise Exception("Channel not recognized! Device only suppors channels 1-4")
+        command = self.manual_mode_command % (group, channel, percent)
+        self.port.write(command)

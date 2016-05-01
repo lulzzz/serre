@@ -10,7 +10,6 @@ import random
 import Tkinter as tk
 from itertools import cycle
 import tools.gui_tk as rhumGUI
-import tools.lighting as rhumLighting
 import tools.controller as rhumController
 
 """
@@ -119,9 +118,8 @@ class Node:
                     print("LOCAL_QUEUE: %d" %  num_samples)
                     try:
                         sample = self.controller_queue.pop()
+                        if (self.gui is not None): self.gui.update_values(sample['data'])
                         print("SAMPLE: %s" % str(sample))
-                        for k in self.controller.rules.iterkeys():
-                            pass #!TODO Maybe use the controller rules for the filering
                         while len(self.controller_queue) > queue_limit:
                             self.controller_queue.pop(0) # grab from out-queue
                         response = self.push_to_remote(sample) # SEND TO REMOTE
@@ -129,8 +127,6 @@ class Node:
                             self.remote_queue.append(response)
                     except Exception as e:
                         print str(e)
-                else:
-                    data = {}
 
                 # Handled accrued responses/errors
                 num_responses = len(self.remote_queue)
@@ -138,7 +134,6 @@ class Node:
                     for resp in self.remote_queue:
                         print("REMOTE_QUEUE: %d" % num_responses)
                         print("RESPONSE: %s" % str(resp))
-                        # ERROR CODES
                         response_code = resp[0]
                         if response_code == 200:
                             target_values = resp[1]['targets']
@@ -156,8 +151,6 @@ class Node:
                         else:
                             pass #!TODO Unknown errors!
 
-            else:
-                print self.remote_queue #!TODO
         except KeyboardInterrupt:
             print "\nexiting..."
             self.threads_active = False

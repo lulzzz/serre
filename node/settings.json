@@ -1,8 +1,7 @@
 {
     "lights_off": 21, 
     "lights_on": 14, 
-    "p1" : 50,
-    "p2" : 50,
+    "ambient_min" : 50,
     "soil_1" : 50,
     "soil_2" : 50,
     "soil_3" : 50,
