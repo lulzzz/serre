@@ -8,7 +8,6 @@
 #include <RunningMedian.h>
 
 /* --- Prototypes --- */
-int roundFloat(float);
 int readAverage(const int, const int, const int);
 float toVoltage(const int, const int, const int);
 int getLuminosity(const int, const int);
@@ -181,24 +180,13 @@ void loop() {
   dict["s2"] = current_smc_2;
   dict["s3"] = current_smc_3;
   dict["s4"] = current_smc_4;
-  dict["p1"] = current_photo_1;
-  dict["p2"] = current_photo_2;
+  dict["p"] = (current_photo_1 + current_photo_2) / 2; // average the two values
   dict.printTo(data_buffer, sizeof(data_buffer));
   sprintf(ser_buffer, "{\"data\":%s,\"targets\":%s,\"chksum\":%d}", data_buffer, targets_buffer, checksum(data_buffer));
   Serial.println(ser_buffer);
 }
 
 /* --- Functions --- */
-// Convert Float to Int
-int roundFloat(float value) {
-  int iTemp = (int)value;
-  float fTemp = value - iTemp;
-  if (fTemp > 0.5) {
-    return (int)(value + 1);
-  }
-  return (int)value;
-}
-
 // Read Pin Value
 int readAverage(const int pin_write, const int pin_read, const int num_samples) {
   const int delay_millis = 100;
@@ -217,12 +205,23 @@ float toVoltage(const int pin_write, const int pin_read, const int num_samples) 
   return readAverage(pin_write, pin_read, num_samples) * (5.0 / 1023.0);
 }
 
-// Return Ohms
+// Return Luminosity (%)
+// Assume linear relationship
 int getLuminosity(const int pin_write, const int pin_read) {
   const int num_samples = 5;
   const int reference_voltage = 5; // Arduino Voltage
-  const float resistance = 975; // Ohms
-  return roundFloat(resistance / ((reference_voltage / toVoltage(pin_write, pin_read, num_samples)) - 1));
+  const float volt_min = 0; // bits
+  const float volt_max = 1024; // bits
+  const int luminosity = map(readAverage(pin_write, pin_read, num_samples), volt_min, volt_max, 0, 100);
+  if (luminosity < 0) {
+    return 0;
+  }
+  else if (luminosity > 100) {
+    return 100;
+  }
+  else {
+    return luminosity;
+  }
 }
 
 // Calculate Volumetric Moisture Content (%) for VH400 Sensor
