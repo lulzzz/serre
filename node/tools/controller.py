@@ -128,7 +128,6 @@ class Controller:
 
         # Set output based on lights rules
         # This rules are ANDs, so if any of them are zero, they default to zero
-        self.percent = 0
         try:
             # Check each rules "type", and then set the target value based on the input values
             limit_min = params[self.lights_rules['on']]
