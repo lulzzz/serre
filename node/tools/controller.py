@@ -43,7 +43,8 @@ class Controller:
             self.lights_device = self.rules['lights_device']
             self.lights_baud = self.rules['lights_baud']
             self.lights_rules = self.rules['lights_rules']
-
+			self.percent = 0 # default lights to 0
+			
         except Exception as e:
             raise e
 
@@ -127,7 +128,6 @@ class Controller:
 
         # Set output based on lights rules
         # This rules are ANDs, so if any of them are zero, they default to zero
-        percent = 0 # default to 0 just in case
         try:
             # Check each rules "type", and then set the target value based on the input values
             limit_min = params[self.lights_rules['on']]
@@ -138,15 +138,19 @@ class Controller:
             output = params[self.lights_rules['output']]
             if (metric < limit_max) and (metric > limit_min):
                 if reference < threshold:
-                    percent = output
+                    self.percent += 1
+				else:
+					self.percent -= 1
+			else:
+				self.percent = 0
             print limit_min, limit_max, reference, threshold, output
         except:
             raise Exception("Unable to determine rule for lights! Check .ctrl file")
 
         # Send parameters to lights
-        print("OVERHEAD LEVEL: %s" % str(percent))
+        print("OVERHEAD LEVEL: %s" % str(self.percent))
         for c in [1,2,3,4]:
-            self.lights_port.set_channel(c, percent)
+            self.lights_port.set_channel(c, self.percent)
         return s
 
     def checksum(self, d, mod=256):
