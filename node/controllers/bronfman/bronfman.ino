@@ -2,10 +2,8 @@
   Hydroponics Controller - Bronfman 
 */
   
-
 /* --- Libraries --- */
 #include <ArduinoJson.h>
-#include <RunningMedian.h>
 
 /* --- Prototypes --- */
 int readAverage(const int, const int, const int);
@@ -13,7 +11,7 @@ float toVoltage(const int, const int, const int);
 int getLuminosity(const int, const int);
 int getMoistureContent (const int, const int);
 void setRelay(const int, const boolean);
-boolean controlMoisture(const int, const int);
+boolean controlMoisture(int, int, boolean);
 int checksum(char*);
 
 /* --- Constants --- */
@@ -29,10 +27,15 @@ const int PIN_D_SENSOR_SMC_1 = 2;
 const int PIN_D_SENSOR_SMC_2 = 3;
 const int PIN_D_SENSOR_SMC_3 = 4;
 const int PIN_D_SENSOR_SMC_4 = 5;
+const int SMC_DEADBAND = 10; // %
+const int SMC_NUM_SAMPLES = 5;
 
 // Photosensors (950 Ohm)
 const int PIN_D_SENSOR_PHOTO_1 = 6;
 const int PIN_D_SENSOR_PHOTO_2 = 7;
+const int PHOTO_MIN = 50; // bits
+const int PHOTO_MAX = 1024; // bits
+const int PHOTO_NUM_SAMPLES = 5;
 
 // Soil Moisture Content Relays
 const int PIN_D_RELAY_SMC_1 = 8;
@@ -71,10 +74,10 @@ int current_smc_3 = 0;
 int current_smc_4 = 0;
 int current_photo_1 = 0;
 int current_photo_2 = 0;
-int target_smc_1 = 0;
-int target_smc_2 = 0;
-int target_smc_3 = 0;
-int target_smc_4 = 0;
+int target_smc_1 = 70;
+int target_smc_2 = 70;
+int target_smc_3 = 70;
+int target_smc_4 = 70;
 
 void setup() {
 
@@ -162,10 +165,10 @@ void loop() {
   current_photo_2 = getLuminosity(PIN_D_SENSOR_PHOTO_2, PIN_A_SENSOR_PHOTO_2);
 
   // Control Irritation
-  relay_smc_1 = controlMoisture(target_smc_1, current_smc_1);
-  relay_smc_2 = controlMoisture(target_smc_2, current_smc_2);
-  relay_smc_3 = controlMoisture(target_smc_3, current_smc_3);
-  relay_smc_4 = controlMoisture(target_smc_4, current_smc_4);
+  relay_smc_1 = controlMoisture(target_smc_1, current_smc_1, relay_smc_1);
+  relay_smc_2 = controlMoisture(target_smc_2, current_smc_2, relay_smc_1);
+  relay_smc_3 = controlMoisture(target_smc_3, current_smc_3, relay_smc_1);
+  relay_smc_4 = controlMoisture(target_smc_4, current_smc_4, relay_smc_1);
   setRelay(PIN_D_RELAY_SMC_1, relay_smc_1); // Solenoid A
   setRelay(PIN_D_RELAY_SMC_2, relay_smc_2); // Solenoid B
   setRelay(PIN_D_RELAY_SMC_3, relay_smc_3); // Solenoid C
@@ -178,8 +181,8 @@ void loop() {
   JsonObject& dict = json_tx.createObject();
   dict["s1"] = current_smc_1;
   dict["s2"] = current_smc_2;
-  dict["s3"] = current_smc_3;
-  dict["s4"] = current_smc_4;
+  dict["s4"] = current_smc_3;
+  dict["s3"] = current_smc_4;
   dict["p"] = (current_photo_1 + current_photo_2) / 2; // average the two values
   dict.printTo(data_buffer, sizeof(data_buffer));
   sprintf(ser_buffer, "{\"data\":%s,\"targets\":%s,\"chksum\":%d}", data_buffer, targets_buffer, checksum(data_buffer));
@@ -208,11 +211,7 @@ float toVoltage(const int pin_write, const int pin_read, const int num_samples) 
 // Return Luminosity (%)
 // Assume linear relationship
 int getLuminosity(const int pin_write, const int pin_read) {
-  const int num_samples = 5;
-  const int reference_voltage = 5; // Arduino Voltage
-  const float volt_min = 0; // bits
-  const float volt_max = 1024; // bits
-  const int luminosity = map(readAverage(pin_write, pin_read, num_samples), volt_min, volt_max, 0, 100);
+  const int luminosity = map(readAverage(pin_write, pin_read, PHOTO_NUM_SAMPLES), PHOTO_MIN, PHOTO_MAX, 100, 0);
   if (luminosity < 0) {
     return 0;
   }
@@ -227,9 +226,8 @@ int getLuminosity(const int pin_write, const int pin_read) {
 // Calculate Volumetric Moisture Content (%) for VH400 Sensor
 // http://vegetronix.com/Products/VH400/VH400-Piecewise-Curve.phtml
 int getMoistureContent (const int pin_write, const int pin_read) {
-  const int num_samples = 5;
   float moisture = 0.0;
-  float voltage = toVoltage(pin_write, pin_read, num_samples);
+  float voltage = toVoltage(pin_write, pin_read, SMC_NUM_SAMPLES);
   if (voltage < 1.1) {
     moisture = 10.0 * voltage - 1.0;
   }
@@ -242,9 +240,19 @@ int getMoistureContent (const int pin_write, const int pin_read) {
   if (voltage < 2.2) {
     moisture = 26.32 * voltage - 7.89;
   }
-  // si la valeur est en haut de 50 la pente est approximativement lin�aire
   if (voltage >= 2.2) {
-    moisture = 26.32 * voltage - 7.89;
+    moisture = 26.32 * voltage - 7.89; 
+  }
+  if (voltage >= 2.85) {
+    moisture = 219.2 * voltage - 557.6;
+  }
+  
+  // Limit to percentage range
+  if (moisture > 100) {
+    moisture = 100;
+  }
+  else if (moisture < 0) {
+    moisture = 0;
   }
   return moisture;
 }
@@ -261,12 +269,29 @@ void setRelay(const int pin, const boolean state) {
 }
 
 // Function to determine if irrigation solenoid should be engaged/disengaged
-boolean controlMoisture(int target, int current) {
-  if (target > current) {
-    return true;
+// greater than SMC_TARGET --> deactivate
+// less than SMC_TARGET - SMC_DEADBAND --> activate
+// within SMC_TARGET +/- SMC_DEADBAND --> deactivate
+boolean controlMoisture(int target, int current, boolean state) {
+  // GREATER THAN
+  if (current < target - SMC_DEADBAND) {
+    return true; // engage if under limit - deadband
+  }
+  // IN RANGE
+  else if ((current < target) && (current > target - SMC_DEADBAND)) {
+    if (state) {
+      return true; // if rising, keep rising
+    }
+    else {
+      return false; // if falling, keep falling
+    }
+  }
+  // LESS THAN
+  else if (current > target) {
+    return false; // disengage if over limit
   }
   else {
-    return false;
+    return false; // disengage if everything is awful, THIS SHOULD NEVER HAPPEN
   }
 }
 
