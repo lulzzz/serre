@@ -177,11 +177,11 @@ class GUI_bronfman(threading.Thread):
         ## Lights
         # Intercanopy
         self.lights_on = tk.IntVar()
-        self.scale_lights_on = tk.Scale(self.root, from_=0.0, to=24.0, length=200, orient=tk.HORIZONTAL, variable = self.lights_on)
+        self.scale_lights_on = tk.Scale(self.root, from_=0.0, to=24.0, length=200, orient=tk.HORIZONTAL, variable = self.lights_on, width=25)
         self.scale_lights_on.grid(column=0, row=3, ipady=20)
         self.scale_lights_on.set(self.settings['lights_on'])
         self.lights_off = tk.IntVar()
-        self.scale_lights_off = tk.Scale(self.root, from_=0.0, to=24.0, length=200, orient=tk.HORIZONTAL, variable = self.lights_off)
+        self.scale_lights_off = tk.Scale(self.root, from_=0.0, to=24.0, length=200, orient=tk.HORIZONTAL, variable = self.lights_off, width=25)
         self.scale_lights_off.grid(column=0, row=5, ipady=20)
         self.scale_lights_off.set(self.settings['lights_off'])
         self.label_lights_on = tk.Label(self.root, text='Lumiere ON (hr)', font=self.font)
@@ -194,7 +194,7 @@ class GUI_bronfman(threading.Thread):
         self.label_ambient_min = tk.Label(self.root, text=self.ambient_light_template, font=self.font)
         self.label_ambient_min.grid(column=0, row=7)
         self.ambient_min = tk.IntVar()
-        self.scale_ambient_min = tk.Scale(self.root, from_=0, to=100, length=200, orient=tk.HORIZONTAL, variable = self.ambient_min)
+        self.scale_ambient_min = tk.Scale(self.root, from_=0, to=100, length=200, orient=tk.HORIZONTAL, variable = self.ambient_min, width=25)
         self.scale_ambient_min.grid(column=0, row=8, ipady=20)
         self.scale_ambient_min.set(self.settings['ambient_min'])
 
@@ -204,7 +204,7 @@ class GUI_bronfman(threading.Thread):
         self.label_smc1 = tk.Label(self.root, text=self.smc1_template, font=self.font)
         self.label_smc1.grid(column=1, row=2)
         self.smc1 = tk.IntVar()
-        self.scale_smc1 = tk.Scale(self.root, from_=0, to=100, length=200, orient=tk.HORIZONTAL, variable = self.smc1)
+        self.scale_smc1 = tk.Scale(self.root, from_=0, to=100, length=200, orient=tk.HORIZONTAL, variable = self.smc1, width=25)
         self.scale_smc1.grid(column=1, row=3, ipady=20)
         self.scale_smc1.set(self.settings['soil_1'])
 
@@ -213,7 +213,7 @@ class GUI_bronfman(threading.Thread):
         self.label_smc2 = tk.Label(self.root, text=self.smc2_template, font=self.font)
         self.label_smc2.grid(column=1, row=4)
         self.smc2 = tk.IntVar()
-        self.scale_smc2 = tk.Scale(self.root, from_=0, to=100, length=200, orient=tk.HORIZONTAL, variable = self.smc2)
+        self.scale_smc2 = tk.Scale(self.root, from_=0, to=100, length=200, orient=tk.HORIZONTAL, variable = self.smc2, width=25)
         self.scale_smc2.grid(column=1, row=5, ipady=20)
         self.scale_smc2.set(self.settings['soil_2'])
 
@@ -222,7 +222,7 @@ class GUI_bronfman(threading.Thread):
         self.label_smc3 = tk.Label(self.root, text=self.smc3_template, font=self.font)
         self.label_smc3.grid(column=2, row=2)
         self.smc3 = tk.IntVar()
-        self.scale_smc3 = tk.Scale(self.root, from_=0, to=100, length=200, orient=tk.HORIZONTAL, variable = self.smc3)
+        self.scale_smc3 = tk.Scale(self.root, from_=0, to=100, length=200, orient=tk.HORIZONTAL, variable = self.smc3, width=25)
         self.scale_smc3.grid(column=2, row=3, ipady=20)
         self.scale_smc3.set(self.settings['soil_3'])
         
@@ -231,7 +231,7 @@ class GUI_bronfman(threading.Thread):
         self.label_smc4 = tk.Label(self.root, text=self.smc4_template, font=self.font)
         self.label_smc4.grid(column=2, row=4)
         self.smc4 = tk.IntVar()
-        self.scale_smc4 = tk.Scale(self.root, from_=0, to=100, length=200, orient=tk.HORIZONTAL, variable = self.smc4)
+        self.scale_smc4 = tk.Scale(self.root, from_=0, to=100, length=200, orient=tk.HORIZONTAL, variable = self.smc4, width=25)
         self.scale_smc4.grid(column=2, row=5, ipady=20)
         self.scale_smc4.set(self.settings['soil_4'])
 
@@ -240,7 +240,7 @@ class GUI_bronfman(threading.Thread):
         self.label_overhead_level = tk.Label(self.root, text=self.overhead_level_template, font=self.font)
         self.label_overhead_level.grid(column=1, row=7)
         self.overhead_level = tk.IntVar()
-        self.scale_overhead_level = tk.Scale(self.root, from_=0, to=100, length=200, orient=tk.HORIZONTAL, variable = self.overhead_level)
+        self.scale_overhead_level = tk.Scale(self.root, from_=0, to=100, length=200, orient=tk.HORIZONTAL, variable = self.overhead_level, width=25)
         self.scale_overhead_level.grid(column=1, row=8, ipady=20)
         self.scale_overhead_level.set(self.settings['overhead_level'])
 
