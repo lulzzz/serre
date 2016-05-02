@@ -141,7 +141,7 @@ class Controller:
                     if (self.percent < output):
                         self.percent += 1
                     else:
-                        pass # do nothing
+                        self.percent = output
                 else:
                     self.percent -= 1 # if over the threshold level, fade until at level
             else:
