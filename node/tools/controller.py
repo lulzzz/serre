@@ -137,11 +137,13 @@ class Controller:
             reference = params[self.lights_rules['reference']]
             output = params[self.lights_rules['output']]
             if (metric < limit_max) and (metric > limit_min):
-                if (reference < threshold)
+                if (reference < threshold):
                     if (self.percent < output):
                         self.percent += 1
+                    else:
+                        pass # do nothing
                 else:
-                    self.percent -= 1
+                    self.percent -= 1 # if over the threshold level, fade until at level
             else:
                 self.percent = 0
             print limit_min, limit_max, reference, threshold, output
