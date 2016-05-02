@@ -25,8 +25,8 @@ const int INTERVAL = 20;
 // Soil Moisture Sensors (VH400)
 const int PIN_D_SENSOR_SMC_1 = 2;
 const int PIN_D_SENSOR_SMC_2 = 3;
-const int PIN_D_SENSOR_SMC_3 = 4;
-const int PIN_D_SENSOR_SMC_4 = 5;
+const int PIN_D_SENSOR_SMC_3 = 5;
+const int PIN_D_SENSOR_SMC_4 = 4;
 const int SMC_DEADBAND = 10; // %
 const int SMC_NUM_SAMPLES = 5;
 
@@ -40,8 +40,8 @@ const int PHOTO_NUM_SAMPLES = 5;
 // Soil Moisture Content Relays
 const int PIN_D_RELAY_SMC_1 = 8;
 const int PIN_D_RELAY_SMC_2 = 9;
-const int PIN_D_RELAY_SMC_3 = 10;
-const int PIN_D_RELAY_SMC_4 = 11;
+const int PIN_D_RELAY_SMC_3 = 11;
+const int PIN_D_RELAY_SMC_4 = 10;
 
 // Intercanopy LED Relay
 const int PIN_D_RELAY_LED = 12; // set to D13 if independent
@@ -49,8 +49,8 @@ const int PIN_D_RELAY_LED = 12; // set to D13 if independent
 // Analog Pins
 const int PIN_A_SENSOR_SMC_1 = 0;
 const int PIN_A_SENSOR_SMC_2 = 1;
-const int PIN_A_SENSOR_SMC_3 = 2;
-const int PIN_A_SENSOR_SMC_4 = 3;
+const int PIN_A_SENSOR_SMC_3 = 3;
+const int PIN_A_SENSOR_SMC_4 = 2;
 const int PIN_A_SENSOR_PHOTO_1 = 4;
 const int PIN_A_SENSOR_PHOTO_2 = 5;
 
@@ -181,8 +181,8 @@ void loop() {
   JsonObject& dict = json_tx.createObject();
   dict["s1"] = current_smc_1;
   dict["s2"] = current_smc_2;
-  dict["s4"] = current_smc_3;
-  dict["s3"] = current_smc_4;
+  dict["s3"] = current_smc_3;
+  dict["s4"] = current_smc_4;
   dict["p"] = (current_photo_1 + current_photo_2) / 2; // average the two values
   dict.printTo(data_buffer, sizeof(data_buffer));
   sprintf(ser_buffer, "{\"data\":%s,\"targets\":%s,\"chksum\":%d}", data_buffer, targets_buffer, checksum(data_buffer));
