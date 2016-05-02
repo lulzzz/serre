@@ -168,7 +168,7 @@ class GUI_bronfman(threading.Thread):
         print("INITIAL_PARAMS: %s" % self.settings)
         self.root = tk.Tk()
         self.root.title("Hydroponics Controller (Bronfman)")
-        #w, h = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
+        w, h = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
         self.root.geometry("%dx%d+0+0" % (w,h))
         self.root.overrideredirect(1)
         [self.root.rowconfigure(i,weight=1) for i in range(10)]
