@@ -76,7 +76,7 @@ class Node:
             else:
                 return (400, 'Lost server')
 
-    def run(self, queue_limit=16, error_limit=None, gui=False, freq=10):
+    def run(self, queue_limit=16, error_limit=None, gui=False, freq=1):
         """
         Run node as HTTP daemon
 

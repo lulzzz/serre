@@ -137,8 +137,9 @@ class Controller:
             reference = params[self.lights_rules['reference']]
             output = params[self.lights_rules['output']]
             if (metric < limit_max) and (metric > limit_min):
-                if (reference < threshold) and (self.percent < output):
-                    self.percent += 1
+                if (reference < threshold)
+                    if (self.percent < output):
+                        self.percent += 1
                 else:
                     self.percent -= 1
             else:
