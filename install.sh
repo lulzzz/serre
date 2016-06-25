@@ -11,18 +11,6 @@ BUILD_PATH="$PWD/build"
 cp $CONFIG_PATH/sources.list /etc/apt/
 apt-get update
 
-# Update Kernel
-read -p "Update kernel? [y/n] " ans
-if [ $ans = y -o $ans = Y -o $ans = yes -o $ans = Yes -o $ans = YES ]
-    then
-        dpkg -i $CONFIG_PATH/kernel/linux-headers-4.2.0*.deb
-		dpkg -i $CONFIG_PATH/kernel/linux-image-4.2.0*.deb
-fi
-if [ $ans = n -o $ans = N -o $ans = no -o $ans = No -o $ans = NO ]
-    then
-        echo "Aborting..."
-fi
-
 # GUI
 read -p "Do you want to setup GUI? [y/n] " ans
 if [ $ans = y -o $ans = Y -o $ans = yes -o $ans = Yes -o $ans = YES ]
@@ -31,8 +19,8 @@ if [ $ans = y -o $ans = Y -o $ans = yes -o $ans = Yes -o $ans = YES ]
         apt-get install unclutter
         cp $CONFIG_PATH/unclutter /etc/default/
         echo "Configuring Autostart ..."
-	cp conf/RHUM.desktop /home/trevor/.config/autostart
 	read -p "User: " user
+	cp $CONFIG_PATH/Serre.desktop /home/$user/.config/autostart
 	usermod -a -G dialout $user
 	/usr/lib/i386-linux-gnu/lightdm/lightdm-set-defaults --autologin $user # prompt for username
 
