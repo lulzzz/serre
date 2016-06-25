@@ -1,22 +1,5 @@
-# RHUM - Recirculating Hydroponic Universal Manager
-
-## Todo 
-* User-login
-* Graph recent data from a node
-
-## Hardware
-
-### Node
-1. 1x Power Button - 15/32"
-2. 1x CAN (4-pin) - 3/4"
-3. 1x 12V Power Connection (2-pin) - 3/4"
-4. 1x LAN (RJ45) - 13/16"
-5. 2x WiFi Antennae - 1/4"
-
-### Tray
-1. 1x Sensor Array (6-pin)- 3/4"
-2. 2x CAN (4-pin) - 3/4"
-3. 1x Pump Power (sealing clamp) - 15/32"
+# Serre - An automatic greenhouse controller for lights and watering
+A simple control system consisting of a a linux box and a dedicated microcontroller.
 
 ## References
 1. http://flask.pocoo.org/docs/0.10/deploying/mod_wsgi/
